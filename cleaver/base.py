@@ -1,7 +1,3 @@
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict  # noqa
 from itertools import izip_longest
 
 from .backend import CleaverBackend

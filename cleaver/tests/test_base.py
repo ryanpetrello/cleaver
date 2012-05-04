@@ -1,8 +1,3 @@
-try:
-    from collections import OrderedDict
-except ImportError:
-    from ordereddict import OrderedDict  # noqa
-
 from unittest import TestCase
 from datetime import datetime
 
