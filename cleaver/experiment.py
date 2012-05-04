@@ -2,6 +2,15 @@ from random import choice
 
 
 class Experiment(object):
+    """
+    Represents an experiment record and related utilities.
+    Not generally instantiated directly.
+
+    :param backend an instance of ``cleaver.backend.CleaverBackend``.
+    :param name a unique string identifier for the test
+    :param started_on the date the first participant started the test
+    :param variants a list of string variants
+    """
 
     def __init__(self, backend, name, started_on, variants):
         self.backend = backend
@@ -21,7 +30,7 @@ class Experiment(object):
             self.backend.conversions(self.name, v) for v in self.variants
         )
 
-    def random_variant(self, weights):
+    def random_variant(self, weights={}):
         return choice(self.variants)
 
     @property
@@ -29,10 +38,10 @@ class Experiment(object):
         pass
 
     @classmethod
-    def all(self, backend):
-        backend.all_experiments()
+    def all(cls, backend):
+        return backend.all_experiments()
 
     def __repr__(self):
-        return 'Experiment: %s (%s)' % (self.name, ' | '.join(
+        return 'Experiment: %s <%s>' % (self.name, '|'.join(
             v for v in self.variants
         ))

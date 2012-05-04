@@ -10,13 +10,14 @@ class Cleaver(object):
         """
         Create a new Cleaver instance.
 
-        Generally not called directly, but established automatically by
-        ``cleaver.SplitMiddleware``.
+        Not generally instantiated directly, but established automatically by
+        ``cleaver.SplitMiddleware`` and used within a WSGI application via
+        ``request.environ['cleaver']``.
 
-        :param identity - any implementation of
-                            ``cleaver.identity.CleaverIdentityProvider``
-        :param backend - any implementation of
-                            ``cleaver.backend.CleaverBackend``
+        :param identity any implementation of
+                          ``cleaver.identity.CleaverIdentityProvider``
+        :param backend any implementation of
+                          ``cleaver.backend.CleaverBackend``
         """
 
         if not isinstance(identity, CleaverIdentityProvider):
