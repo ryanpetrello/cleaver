@@ -15,7 +15,7 @@ setup(
     """,
     long_description=None,
     classifiers=[
-        'Development Status :: 5 - Production/Stable',
+        'Development Status :: 1 - Planning',
         'Intended Audience :: Developers',
         'Intended Audience :: Information Technology',
         'License :: OSI Approved :: BSD License',
