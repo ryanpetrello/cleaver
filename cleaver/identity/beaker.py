@@ -14,5 +14,4 @@ class BeakerSessionProvider(CleaverIdentityProvider):
         self.environ_key = environ_key
 
     def get_identity(self, environ):
-        print environ[self.environ_key].id
         return environ[self.environ_key].id

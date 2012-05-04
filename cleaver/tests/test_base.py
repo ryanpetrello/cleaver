@@ -47,13 +47,15 @@ class TestSplit(TestCase):
     @patch.object(FakeBackend, 'save_experiment')
     def test_experiment_save(self, save_experiment, get_experiment):
         backend = FakeBackend()
-        get_experiment.return_value = None
-        save_experiment.return_value = Experiment(
-            backend=backend,
-            name='show_promo',
-            started_on=datetime.utcnow(),
-            variants=['True', 'False']
-        )
+        get_experiment.side_effect = [
+            None, # the first call fails
+            Experiment(
+                backend=backend,
+                name='show_promo',
+                started_on=datetime.utcnow(),
+                variants=['True', 'False']
+            ) # but the second call succeeds after a successful save
+        ]
         cleaver = Cleaver({}, FakeIdentityProvider(), backend)
 
         assert cleaver.split('show_promo') in (True, False)
