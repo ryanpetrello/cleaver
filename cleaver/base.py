@@ -6,7 +6,7 @@ from .identity import CleaverIdentityProvider
 
 class Cleaver(object):
 
-    def __init__(self, identity, backend):
+    def __init__(self, environ, identity, backend):
         """
         Create a new Cleaver instance.
 
@@ -31,10 +31,11 @@ class Cleaver(object):
             )
         self._identity = identity
         self._backend = backend
+        self._environ = environ
 
     @property
     def identity(self):
-        return self._identity.get_identity()
+        return self._identity.get_identity(self._environ)
 
     def split(self, experiment_name, *variants):
         """
@@ -61,8 +62,10 @@ class Cleaver(object):
         b = self._backend
 
         # Record the experiment if it doesn't exist already
-        experiment = b.get_experiment(experiment_name, keys) or \
+        experiment = b.get_experiment(experiment_name, keys)
+        if experiment is None:
             b.save_experiment(experiment_name, keys)
+            experiment = b.get_experiment(experiment_name, keys)
 
         # Retrieve the variant assigned to the current user
         variant = b.get_variant(self.identity, experiment.name)

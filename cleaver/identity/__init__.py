@@ -9,5 +9,5 @@ class CleaverIdentityProvider(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def get_identity(self):
+    def get_identity(self, environ):
         return  # pragma: nocover

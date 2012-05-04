@@ -10,9 +10,9 @@ class BeakerSessionProvider(CleaverIdentityProvider):
     ``SessionMiddleware``.
     """
 
-    def __init__(self, environ, environ_key='beaker.session'):
-        self.environ = environ
+    def __init__(self, environ_key='beaker.session'):
         self.environ_key = environ_key
 
-    def get_identity(self):
-        return self.environ[self.environ_key].id
+    def get_identity(self, environ):
+        print environ[self.environ_key].id
+        return environ[self.environ_key].id

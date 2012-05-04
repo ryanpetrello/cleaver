@@ -1,9 +1,10 @@
 import sqlite3
 
 from cleaver.experiment import Experiment
+from cleaver.backend import CleaverBackend
 
 
-class SQLiteBackend(object):
+class SQLiteBackend(CleaverBackend):
     """
     Provides an interface for persisting and retrieving A/B test results
     to an in-memory SQLite database.
@@ -14,20 +15,23 @@ class SQLiteBackend(object):
     def __init__(self, db=':memory:'):
         self._conn = sqlite3.connect(db)
         self._conn.row_factory = sqlite3.Row
-        self._conn.execute(
-            "CREATE TABLE IF NOT EXISTS e (name TEXT PRIMARY KEY, started_on TEXT)"
+
+        self.execute(
+            "CREATE TABLE IF NOT EXISTS e " \
+                "(name TEXT PRIMARY KEY, started_on TEXT)"
         )
-        self._conn.execute(
-            "CREATE TABLE IF NOT EXISTS v (name TEXT PRIMARY KEY, experiment_name TEXT)"
+        self.execute(
+            "CREATE TABLE IF NOT EXISTS v " \
+                "(name TEXT PRIMARY KEY, experiment_name TEXT)"
         )
-        self._conn.execute(
+        self.execute(
             "CREATE TABLE IF NOT EXISTS i (" \
                 "identity TEXT PRIMAY KEY," \
                 "experiment_name TEXT," \
                 "variant TEXT" \
             ")"
         )
-        self._conn.execute(
+        self.execute(
             "CREATE TABLE IF NOT EXISTS p (" \
                 "experiment_name TEXT," \
                 "variant TEXT," \
@@ -35,7 +39,7 @@ class SQLiteBackend(object):
                 "PRIMARY KEY (experiment_name, variant)" \
             ")"
         )
-        self._conn.execute(
+        self.execute(
             "CREATE TABLE IF NOT EXISTS c (" \
                 "experiment_name TEXT," \
                 "variant TEXT," \
@@ -43,6 +47,10 @@ class SQLiteBackend(object):
                 "PRIMARY KEY (experiment_name, variant)" \
             ")"
         )
+
+    def execute(self, sql, params=()):
+        with self._conn:
+            return self._conn.execute(sql, params)
 
     def close(self):
         self._conn.close()
@@ -54,7 +62,7 @@ class SQLiteBackend(object):
             started_on=row['started_on'],
             variants=[
                 v['name']
-                for v in self._conn.execute(
+                for v in self.execute(
                     "SELECT * FROM v WHERE experiment_name = ?",
                     (row['name'],)
                 )
@@ -68,7 +76,7 @@ class SQLiteBackend(object):
         Returns a list of ``cleaver.experiment.Experiment``s
         """
         experiments = []
-        for row in self._conn.execute("SELECT * FROM e"):
+        for row in self.execute("SELECT * FROM e"):
             experiments.append(self.experiment_factory(row))
         return experiments
 
@@ -81,7 +89,7 @@ class SQLiteBackend(object):
 
         Returns a ``cleaver.experiment.Experiment`` or ``None``
         """
-        row = self._conn.execute(
+        row = self.execute(
             "SELECT * FROM e WHERE name=?",
             (name,)
         ).fetchone()
@@ -94,9 +102,9 @@ class SQLiteBackend(object):
         :param name a unique string name for the experiment
         :param variants a list of strings, each with a unique variant name
         """
-        self._conn.execute('INSERT INTO e (name) VALUES (?)', (name,))
+        self.execute('INSERT INTO e (name) VALUES (?)', (name,))
         for v in variants:
-            self._conn.execute(
+            self.execute(
                 'INSERT INTO v (name, experiment_name) VALUES (?, ?)',
                 (v, name)
             )
@@ -110,7 +118,7 @@ class SQLiteBackend(object):
 
         Returns a ``String`` or `None`
         """
-        row = self._conn.execute(
+        row = self.execute(
             'SELECT * FROM i WHERE identity = ? AND experiment_name = ?',
             (identity, experiment_name)
         ).fetchone()
@@ -125,16 +133,16 @@ class SQLiteBackend(object):
         :param experiment_name the string name of the experiment
         :param variant the string name of the variant
         """
-        self._conn.execute(
+        self.execute(
             'INSERT INTO i (identity, experiment_name, variant) ' \
                 'VALUES (?, ?, ?)',
             (identity, experiment_name, variant)
         )
-        self._conn.execute(
+        self.execute(
             'INSERT OR IGNORE INTO p (experiment_name, variant) VALUES (?, ?)',
             (experiment_name, variant)
         )
-        self._conn.execute(
+        self.execute(
             'UPDATE p SET total = total + 1 WHERE ' \
                 'experiment_name = ? AND variant = ?',
             (experiment_name, variant)
@@ -147,11 +155,11 @@ class SQLiteBackend(object):
         :param experiment_name the string name of the experiment
         :param variant the string name of the variant
         """
-        self._conn.execute(
+        self.execute(
             'INSERT OR IGNORE INTO c (experiment_name, variant) VALUES (?, ?)',
             (experiment_name, variant)
         )
-        self._conn.execute(
+        self.execute(
             'UPDATE c SET total = total + 1 WHERE ' \
                 'experiment_name = ? AND variant = ?',
             (experiment_name, variant)
@@ -163,7 +171,7 @@ class SQLiteBackend(object):
 
         Returns an integer.
         """
-        row = self._conn.execute(
+        row = self.execute(
             'SELECT total FROM p WHERE experiment_name = ? AND variant = ?',
             (experiment_name, variant)
         ).fetchone()
@@ -175,7 +183,7 @@ class SQLiteBackend(object):
 
         Returns an integer.
         """
-        row = self._conn.execute(
+        row = self.execute(
             'SELECT total FROM c WHERE experiment_name = ? AND variant = ?',
             (experiment_name, variant)
         ).fetchone()

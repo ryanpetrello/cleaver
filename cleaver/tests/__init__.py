@@ -4,7 +4,7 @@ from cleaver.backend import CleaverBackend
 
 class FakeIdentityProvider(CleaverIdentityProvider):
 
-    def get_identity(self):
+    def get_identity(self, environ):
         pass  # pragma: nocover
 
 

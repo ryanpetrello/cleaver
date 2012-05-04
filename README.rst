@@ -45,6 +45,29 @@ Cleaver can also be used to specify an arbitrary number of alternatives:
 
 Configuring Cleaver
 -------------------
-Cleaver requires a ``CleaverIdentityProvider`` and ``CleaverBackend``
-implementation to track users and stores results.  Luckily, a few
-implementations are provided out of the box, and it's easy to write your own!
+
+Cleaver works out of the box with most WSGI frameworks.  To get started, wrap
+your WSGI application with ``cleaver.SplitMiddleware``:
+
+    from cleaver import SplitMiddleware
+    from cleaver.identity.cookie import CookieIdentityProvider
+    from cleaver.backend.sqlite import SQLiteBackend
+
+    def simple_app(environ, start_response):
+        # Get the session object from the environ
+        cleaver = environ['cleaver']
+
+        price = cleaver(
+            'Half-Off Promotional Price',
+            ('$50', '$50'),
+            ('$25', '$25 (Today Only!)')
+        )
+
+        start_response('200 OK', [('Content-type', 'text/plain')])
+        return ['Sign up for %s' % price]
+
+    wsgi_app = SplitMiddleware(
+        simple_app,
+        CookieIdentityProvider('cookie_name'),
+        SQLiteBackend(':memory:')
+    )
