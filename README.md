@@ -1,5 +1,4 @@
-Cleaver
-=======
+# Cleaver
 
 Bloody simple A/B testing for Python WSGI applications:
 
@@ -9,13 +8,9 @@ Bloody simple A/B testing for Python WSGI applications:
 * Guarantee the same experience for returning users.
 * Integrates easily with existing authentication and storage layers.
 
-Cleaver is inspired by `ABingo
-<http://www.bingocardcreator.com/abingo>`_, `Split
-<https://rubygems.org/gems/split>`_ (Rails) and `Dabble
-<https://github.com/dcrosta/dabble>`_ (Python).
+Cleaver is inspired by [ABingo](<http://www.bingocardcreator.com/abingo>), [Split](<https://rubygems.org/gems/split>) (Rails) and [Dabble](<https://github.com/dcrosta/dabble>) (Python).
 
-Starting an Experiment
-----------------------
+## Starting an Experiment
 
 Starting a new A/B test is easy.  Use this code anywhere within the context of
 an HTTP request to automatically segment visitors:
@@ -28,8 +23,7 @@ an HTTP request to automatically segment visitors:
     # ...later, when the user completes the test, store the conversion...
     cleaver.score('show_promo')
 
-Specifying Alternatives
------------------------
+## Specifying Alternatives
 
 Cleaver can also be used to specify an arbitrary number of alternatives:
 
@@ -43,8 +37,7 @@ Cleaver can also be used to specify an arbitrary number of alternatives:
         ('Blue', '#00F')
     )
 
-Configuring Cleaver
--------------------
+## Configuring Cleaver
 
 Cleaver works out of the box with most WSGI frameworks.  To get started, wrap
 your WSGI application with ``cleaver.SplitMiddleware``:
