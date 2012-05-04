@@ -1,156 +1,157 @@
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict  # noqa
+
 from unittest import TestCase
+from datetime import datetime
+
+from mock import patch
+
+from cleaver import Cleaver
+from cleaver.experiment import Experiment
+from cleaver.identity import CleaverIdentityProvider
+from cleaver.backend import CleaverBackend
 
 
-class TestBaseConfiguration(TestCase):
+class FakeIdentityProvider(CleaverIdentityProvider):
 
-    def setUp(self):
-        from cleaver.backend import CleaverBackend
-        from cleaver.identity import CleaverIdentityProvider
+    def get_identity(self):
+        pass  # pragma: nocover
 
-        class FakeIdentityProvider(CleaverIdentityProvider):
-            def get_identity(self):
-                pass  # pragma: nocover
 
-        class FakeBackend(CleaverBackend):
-            def save_test(self):
-                pass  # pragma: nocover
+class FakeBackend(CleaverBackend):
 
-            def get_variant(self):
-                pass  # pragma: nocover
+    def all_experiments(self):
+        pass  # pragma: nocover
 
-            def set_variant(self):
-                pass  # pragma: nocover
+    def get_experiment(self, name, variants):
+        pass  # pragma: nocover
 
-            def score(self):
-                pass  # pragma: nocover
+    def save_experiment(self, name, variants):
+        pass  # pragma: nocover
 
-        self._identity = FakeIdentityProvider
-        self._backend = FakeBackend
+    def get_variant(self, identity, experiment_name):
+        pass  # pragma: nocover
+
+    def participate(self, identity, experiment_name, variant):
+        pass  # pragma: nocover
+
+    def score(self, experiment_name, variant):
+        pass  # pragma: nocover
+
+    def participants(self, experiment_name, variant):
+        pass  # pragma: nocover
+
+    def conversions(self, experiment_name, variant):
+        pass  # pragma: nocover
+
+
+class TestBase(TestCase):
 
     def test_valid_configuration(self):
-        from cleaver import Cleaver
-        cleaver = Cleaver(self._identity(), self._backend())
-        assert isinstance(cleaver._identity, self._identity)
-        assert isinstance(cleaver._backend, self._backend)
+        cleaver = Cleaver(FakeIdentityProvider(), FakeBackend())
+        assert isinstance(cleaver._identity, FakeIdentityProvider)
+        assert isinstance(cleaver._backend, FakeBackend)
 
     def test_invalid_identity(self):
-        from cleaver import Cleaver
-        self.assertRaises(RuntimeError, Cleaver, None, self._backend())
+        self.assertRaises(RuntimeError, Cleaver, None, FakeIdentityProvider())
 
     def test_invalid_backend(self):
-        from cleaver import Cleaver
-        self.assertRaises(RuntimeError, Cleaver, self._identity(), None)
+        self.assertRaises(RuntimeError, Cleaver, FakeIdentityProvider(), None)
+
+    @patch.object(FakeIdentityProvider, 'get_identity')
+    def test_identity(self, get_identity):
+        cleaver = Cleaver(FakeIdentityProvider(), FakeBackend())
+        get_identity.return_value = 'ABC123'
+
+        assert cleaver.identity == 'ABC123'
 
 
-class TestSplitting(TestCase):
+class TestSplit(TestCase):
 
-    def setUp(self):
-        import inspect
-        from cleaver.backend import CleaverBackend
-        from cleaver.identity import CleaverIdentityProvider
+    @patch.object(FakeBackend, 'get_experiment')
+    @patch.object(FakeBackend, 'save_experiment')
+    def test_experiment_save(self, save_experiment, get_experiment):
+        backend = FakeBackend()
+        get_experiment.return_value = None
+        save_experiment.return_value = Experiment(
+            backend=backend,
+            name='show_promo',
+            started_on=datetime.utcnow(),
+            variants=['True', 'False']
+        )
+        cleaver = Cleaver(FakeIdentityProvider(), backend)
 
-        class MemoryIdentityProvider(CleaverIdentityProvider):
-            def get_identity(self):
-                return 'XYZ'
+        assert cleaver.split('show_promo') in (True, False)
+        get_experiment.assert_called_with('show_promo', ('True', 'False'))
+        save_experiment.assert_called_with('show_promo', ('True', 'False'))
 
-        class MemoryBackend(CleaverBackend):
+    @patch.object(FakeBackend, 'get_experiment')
+    def test_experiment_get(self, get_experiment):
+        backend = FakeBackend()
+        get_experiment.return_value = Experiment(
+            backend=backend,
+            name='show_promo',
+            started_on=datetime.utcnow(),
+            variants=['True', 'False']
+        )
+        cleaver = Cleaver(FakeIdentityProvider(), backend)
 
-            tests = {}
-            records = {}
-            _calls = []
+        assert cleaver.split('show_promo') in (True, False)
+        get_experiment.assert_called_with('show_promo', ('True', 'False'))
 
-            def save_test(self, test_name, variants):
-                self._calls.append(inspect.stack()[0][3])
-                if test_name in self.tests:
-                    return self.tests[test_name]
-                self.tests[test_name] = variants
+    @patch.object(FakeBackend, 'get_experiment')
+    @patch.object(FakeBackend, 'participate')
+    @patch.object(FakeIdentityProvider, 'get_identity')
+    def test_variant_participation(self, get_identity, participate,
+            get_experiment):
+        cleaver = Cleaver(FakeIdentityProvider(), FakeBackend())
+        get_experiment.return_value.name = 'show_promo'
+        get_experiment.return_value.random_variant.return_value = 'True'
+        get_identity.return_value = 'ABC123'
 
-            def get_variant(self, identity, test_name):
-                self._calls.append(inspect.stack()[0][3])
-                return self.records.get((identity, test_name), {}).get('value')
+        assert cleaver.split('show_promo') in (True, False)
+        participate.assert_called_with('ABC123', 'show_promo', 'True')
 
-            def set_variant(self, identity, test_name, variant):
-                self._calls.append(inspect.stack()[0][3])
-                self.records[(identity, test_name)] = {
-                    'value': variant,
-                    'score': 0
-                }
+    @patch.object(FakeBackend, 'score')
+    @patch.object(FakeBackend, 'get_variant')
+    @patch.object(FakeIdentityProvider, 'get_identity')
+    def test_score(self, get_identity, get_variant, score):
+        cleaver = Cleaver(FakeIdentityProvider(), FakeBackend())
+        get_variant.return_value = 'red'
+        get_identity.return_value = 'ABC123'
 
-            def score(self, identity, test_name):
-                record = self.records.get((identity, test_name), {})
-                record['score'] = 1
+        cleaver.score('primary_color')
+        score.assert_called_with('primary_color', 'red')
 
-        self._identity = MemoryIdentityProvider
-        self._backend = MemoryBackend
 
-    def test_identity(self):
-        from cleaver import Cleaver
-        cleaver = Cleaver(self._identity(), self._backend())
-        assert cleaver.identity == 'XYZ'
+class TestVariants(TestCase):
 
-    def test_existing_variant_lookup(self):
-        from cleaver import Cleaver
-        cleaver = Cleaver(self._identity(), self._backend())
-
-        cleaver.split('show_sidebar')
-        assert cleaver._backend._calls == [
-            'save_test', 'get_variant', 'set_variant'
-        ]
-
-        cleaver._backend._calls = []
-        cleaver.split('show_sidebar')
-        assert cleaver._backend._calls == [
-            'save_test', 'get_variant'
-        ]
-
-    def test_true_false_split(self):
-        from cleaver import Cleaver
-        cleaver = Cleaver(self._identity(), self._backend())
-        assert cleaver.split('show_sidebar') in (True, False)
-
-        assert cleaver._backend.tests == {'show_sidebar': ['True', 'False']}
-        assert cleaver._backend.records[
-            ('XYZ', 'show_sidebar')
-        ]['value'] in ('True', 'False')
+    def test_true_false(self):
+        c = Cleaver(FakeIdentityProvider(), FakeBackend())
+        assert tuple(c._parse_variants([])) == (
+            ('True', 'False'),
+            (True, False),
+            (1, 1)
+        )
 
     def test_a_b(self):
-        from cleaver import Cleaver
-        cleaver = Cleaver(self._identity(), self._backend())
-        assert cleaver.split(
-            'price', ('a', 100), ('b', 500)
-        ) in (100, 500)
-
-        assert cleaver._backend.tests == {'price': ['a', 'b']}
-        assert cleaver._backend.records[
-            ('XYZ', 'price')
-        ]['value'] in ('a', 'b')
+        c = Cleaver(FakeIdentityProvider(), FakeBackend())
+        assert tuple(c._parse_variants([
+            ('red', '#F00'), ('green', '#0F0')
+        ])) == (
+            ('red', 'green'),
+            ('#F00', '#0F0'),
+            (1, 1)
+        )
 
     def test_multivariate(self):
-        from cleaver import Cleaver
-        cleaver = Cleaver(self._identity(), self._backend())
-        assert cleaver.split(
-            'price', ('a', 100), ('b', 500), ('c', 1000)
-        ) in (100, 500, 1000)
-
-        assert cleaver._backend.tests == {'price': ['a', 'b', 'c']}
-        assert cleaver._backend.records[
-            ('XYZ', 'price')
-        ]['value'] in ('a', 'b', 'c')
-
-    def test_score(self):
-        from cleaver import Cleaver
-        cleaver = Cleaver(self._identity(), self._backend())
-        cleaver.split('show_sidebar')
-
-        assert cleaver._backend.tests == {'show_sidebar': ['True', 'False']}
-        assert cleaver._backend.records[
-            ('XYZ', 'show_sidebar')
-        ]['value'] in ('True', 'False')
-        assert cleaver._backend.records[
-            ('XYZ', 'show_sidebar')
-        ]['score'] == 0
-
-        cleaver.score('show_sidebar')
-        assert cleaver._backend.records[
-            ('XYZ', 'show_sidebar')
-        ]['score'] == 1
+        c = Cleaver(FakeIdentityProvider(), FakeBackend())
+        assert tuple(c._parse_variants([
+            ('red', '#F00'), ('green', '#0F0'), ('blue', '#00F')
+        ])) == (
+            ('red', 'green', 'blue'),
+            ('#F00', '#0F0', '#00F'),
+            (1, 1, 1)
+        )

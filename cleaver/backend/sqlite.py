@@ -87,7 +87,7 @@ class SQLiteBackend(object):
         ).fetchone()
         return self.experiment_factory(row) if row else None
 
-    def set_experiment(self, name, variants):
+    def save_experiment(self, name, variants):
         """
         Persist an experiment and its variants (unless they already exist).
 

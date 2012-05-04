@@ -2,6 +2,7 @@ try:
     from collections import OrderedDict
 except ImportError:
     from ordereddict import OrderedDict  # noqa
+from itertools import izip_longest
 
 from .backend import CleaverBackend
 from .identity import CleaverIdentityProvider
@@ -12,6 +13,9 @@ class Cleaver(object):
     def __init__(self, identity, backend):
         """
         Create a new Cleaver instance.
+
+        Generally not called directly, but established automatically by
+        ``cleaver.SplitMiddleware``.
 
         :param identity - any implementation of
                             ``cleaver.identity.CleaverIdentityProvider``
@@ -56,21 +60,21 @@ class Cleaver(object):
 
             >>> split('text_color', ('red', '#F00', 2), ('blue', '#00F', 4))
         """
-        variants, weights = self._parse_variants(variants)
+        keys, values, weights = self._parse_variants(variants)
         b = self._backend
 
         # Record the experiment if it doesn't exist already
-        experiment = b.get_variant(experiment_name, variants.keys()) or \
-            b.save_experiment(experiment_name, variants.keys())
+        experiment = b.get_experiment(experiment_name, keys) or \
+            b.save_experiment(experiment_name, keys)
 
         # Retrieve the variant assigned to the current user
-        variant = b.get_variant(self.identity, experiment_name)
+        variant = b.get_variant(self.identity, experiment.name)
         if variant is None:
             # ...or choose (and store) one randomly if it doesn't exist yet...
-            variant = experiment.random_variant().name
-            b.set_variant(self.identity, experiment_name, variant)
+            variant = experiment.random_variant(weights)
+            b.participate(self.identity, experiment.name, variant)
 
-        return variants[variant]
+        return dict(zip(keys, values))[variant]
 
     def score(self, experiment_name):
         """
@@ -87,12 +91,9 @@ class Cleaver(object):
         if not len(variants):
             variants = [('True', True), ('False', False)]
 
-        weights = []
-        for v in variants:
-            try:
-                weights.append(v[2])
-            except IndexError:
-                weights.append(1)
+        variants = map(
+            lambda v: tuple(list(v) + [1]) if len(v) < 3 else v,
+            variants
+        )
 
-        variants = OrderedDict(v[:2] for v in variants)
-        return variants, weights
+        return izip_longest(*variants)

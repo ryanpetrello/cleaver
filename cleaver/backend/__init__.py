@@ -31,7 +31,7 @@ class CleaverBackend(object):
         return  # pragma: nocover
 
     @abc.abstractmethod
-    def set_experiment(self, name, variants):
+    def save_experiment(self, name, variants):
         """
         Persist an experiment and its variants (unless they already exist).
 

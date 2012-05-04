@@ -3,9 +3,11 @@ from random import choice
 
 class Experiment(object):
 
-    def __init__(self, **kw):
-        for k, v in kw.items():
-            setattr(self, k, v)
+    def __init__(self, backend, name, started_on, variants):
+        self.backend = backend
+        self.name = name
+        self.started_on = started_on
+        self.variants = variants
 
     @property
     def participants(self):
@@ -19,7 +21,6 @@ class Experiment(object):
             self.backend.conversions(self.name, v) for v in self.variants
         )
 
-    @property
     def random_variant(self, weights):
         return choice(self.variants)
 
