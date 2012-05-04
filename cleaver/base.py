@@ -1,4 +1,3 @@
-from random import choice
 try:
     from collections import OrderedDict
 except ImportError:
@@ -36,13 +35,13 @@ class Cleaver(object):
     def identity(self):
         return self._identity.get_identity()
 
-    def split(self, test_name, *variants):
+    def split(self, experiment_name, *variants):
         """
         Used to split and track user experience amongst one or more variants.
 
         :param *variants can take many forms, depending on usage.
 
-            When no variants are provided, test variants fall back to a simple
+            When no variants are provided, the test falls back to a simple
             True/False 50/50 split, e.g.,
 
             >>> sidebar() if split('include_sidebar') else empty()
@@ -58,18 +57,31 @@ class Cleaver(object):
             >>> split('text_color', ('red', '#F00', 2), ('blue', '#00F', 4))
         """
         variants, weights = self._parse_variants(variants)
+        b = self._backend
 
-        self._backend.save_test(test_name, variants.keys())
+        # Record the experiment if it doesn't exist already
+        experiment = b.get_variant(experiment_name, variants.keys()) or \
+            b.save_experiment(experiment_name, variants.keys())
 
-        variant = self._backend.get_variant(self.identity, test_name)
+        # Retrieve the variant assigned to the current user
+        variant = b.get_variant(self.identity, experiment_name)
         if variant is None:
-            variant = self._choose(variants.keys(), variants)
-            self._backend.set_variant(self.identity, test_name, variant)
+            # ...or choose (and store) one randomly if it doesn't exist yet...
+            variant = experiment.random_variant().name
+            b.set_variant(self.identity, experiment_name, variant)
 
         return variants[variant]
 
-    def score(self, test_name):
-        self._backend.score(self.identity, test_name)
+    def score(self, experiment_name):
+        """
+        Used to mark the current experiment variant as "converted".
+
+        :param experiment_name the string name of the experiment
+        """
+        self._backend.score(
+            experiment_name,
+            self._backend.get_variant(self.identity, experiment_name)
+        )
 
     def _parse_variants(self, variants):
         if not len(variants):
@@ -84,6 +96,3 @@ class Cleaver(object):
 
         variants = OrderedDict(v[:2] for v in variants)
         return variants, weights
-
-    def _choose(self, variants, weights):
-        return choice(variants)

@@ -10,29 +10,84 @@ class CleaverBackend(object):
     __metaclass__ = abc.ABCMeta
 
     @abc.abstractmethod
-    def save_test(self, test_name, variants):
+    def all_experiments(self):
         """
-        Persist a test and its variants (unless they already exist).
+        Retrieve every available experiment.
+
+        Returns a list of ``cleaver.experiment.Experiment``s
         """
         return  # pragma: nocover
 
     @abc.abstractmethod
-    def get_variant(self, identity, test_name):
+    def get_experiment(self, name, variants):
         """
-        Retrieve the test variant for a specific user (if it exists).
+        Retrieve an experiment by its name and variants (assuming it exists).
+
+        :param name a unique string name for the experiment
+        :param variants a list of strings, each with a unique variant name
+
+        Returns a ``cleaver.experiment.Experiment`` or ``None``
         """
         return  # pragma: nocover
 
     @abc.abstractmethod
-    def set_variant(self, identity, test_name, variant):
+    def set_experiment(self, name, variants):
         """
-        Set the test variant for a specific user.
+        Persist an experiment and its variants (unless they already exist).
+
+        :param name a unique string name for the experiment
+        :param variants a list of strings, each with a unique variant name
         """
         return  # pragma: nocover
 
     @abc.abstractmethod
-    def score(self, identity, test_name):
+    def get_variant(self, identity, experiment_name):
         """
-        Mark a specific user as "converted" for a certain test.
+        Retrieve the variant for a specific user and experiment (if it exists).
+
+        :param identity a unique user identifier
+        :param experiment_name the string name of the experiment
+
+        Returns a ``String`` or `None`
+        """
+        return  # pragma: nocover
+
+    @abc.abstractmethod
+    def participate(self, identity, experiment_name, variant):
+        """
+        Set the variant for a specific user and mark a participation for the
+        experiment.
+
+        :param identity a unique user identifier
+        :param experiment_name the string name of the experiment
+        :param variant the string name of the variant
+        """
+        return  # pragma: nocover
+
+    @abc.abstractmethod
+    def score(self, experiment_name, variant):
+        """
+        Mark a conversion for a specific experiment variant.
+
+        :param experiment_name the string name of the experiment
+        :param variant the string name of the variant
+        """
+        return  # pragma: nocover
+
+    @abc.abstractmethod
+    def participants(self, experiment_name, variant):
+        """
+        The number of participants for a certain variant.
+
+        Returns an integer.
+        """
+        return  # pragma: nocover
+
+    @abc.abstractmethod
+    def conversions(self, experiment_name, variant):
+        """
+        The number of conversions for a certain variant.
+
+        Returns an integer.
         """
         return  # pragma: nocover
