@@ -28,7 +28,7 @@ class SplitMiddleware(object):
             raise RuntimeError(
                 '%s must implement cleaver.backend.CleaverBackend' % backend
             )
-        self._cleaver = Cleaver(self._identity, self._backend)
+        self._cleaver = Cleaver(identity, backend)
         self.environ_key = environ_key
 
     def __call__(self, environ, start_response):
