@@ -15,6 +15,7 @@ class Cleaver(object):
         ``cleaver.SplitMiddleware`` and used within a WSGI application via
         ``request.environ['cleaver']``.
 
+        :param environ the WSGI environ dictionary for the current request
         :param identity any implementation of
                           ``identity.CleaverIdentityProvider`` or
                           a callable that emulates

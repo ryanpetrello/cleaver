@@ -1,2 +1,3 @@
 [run]
 source=cleaver
+omit=*bottle.py
