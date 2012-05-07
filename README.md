@@ -94,3 +94,20 @@ is easy too - just have a look at the full documentation <link>.
 Bacon ipsum dolor sit amet meatball rump t-bone beef ribs, turducken speck
 shoulder. Corned beef prosciutto pig, rump tenderloin spare ribs salami sausage
 turducken pork loin t-bone chuck kielbasa strip steak.
+
+## Development
+Source hosted at [GitHub](https://github.com/ryanpetrello/cleaver). Report
+Issues and Feature Requests on [GitHub
+Issues](https://github.com/ryanpetrello/cleaver/issues).
+
+Tests can be run with ``python setup.py test`` or ``tox``.
+
+All contributions must:
+
+    * Include accompanying tests.
+    * Include narrative and API documentation if new features are added.
+    * Be (generally) compliant with PEP8.
+    * Not break the test or build. Before issuing a pull request, ``$ pip
+      install tox && tox`` from your source to ensure that all tests still pass
+      across multiple versions of Python.
+    * Add your name to the (bottom of the) AUTHORS file.
