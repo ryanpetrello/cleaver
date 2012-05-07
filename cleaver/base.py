@@ -43,6 +43,7 @@ class Cleaver(object):
         """
         Used to split and track user experience amongst one or more variants.
 
+        :param experiment_name a unique string name for the experiment
         :param *variants can take many forms, depending on usage.
 
             When no variants are provided, the test falls back to a simple
@@ -50,13 +51,14 @@ class Cleaver(object):
 
             >>> sidebar() if split('include_sidebar') else empty()
 
-            Otherwise, variants should be provided as arbitrary tuples:
+            Otherwise, variants should be provided as arbitrary tuples in the
+            format ('unique_string_label', any_value), ... e.g.,
 
             >>> split('text_color', ('red', '#F00'), ('blue', '#00F'))
 
             By default, variants are chosen with equal weight.  You can tip the
-            scales if you like by passing a proportional weight in each variant
-            tuple:
+            scales if you like by passing a proportional *integer* weight as
+            the third element in each variant tuple:
 
             >>> split('text_color', ('red', '#F00', 2), ('blue', '#00F', 4))
         """
