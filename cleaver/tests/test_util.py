@@ -10,7 +10,7 @@ class TestRandomVariant(TestCase):
         items = ('True', 'False')
         weights = (1, 1)
         results = {}
-        total = 100000
+        total = 50000
 
         for _ in xrange(total):
             v = random_variant(items, weights).next()
@@ -26,7 +26,7 @@ class TestRandomVariant(TestCase):
         items = ('A', 'B', 'C')
         weights = (1, 3, 6)
         results = {}
-        total = 100000
+        total = 50000
 
         for _ in xrange(total):
             v = random_variant(items, weights).next()

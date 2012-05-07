@@ -71,6 +71,44 @@ class TestSplit(TestCase):
         save_experiment.assert_called_with('show_promo', ('True', 'False'))
 
     @patch.object(FakeBackend, 'get_experiment')
+    @patch.object(FakeBackend, 'save_experiment')
+    def test_experiment_save_conflict(self, save_experiment, get_experiment):
+        """
+        If an experiment is saved with a certain name and variants, and then
+        is created later with a different set of variants, e.g.,
+
+        split('show_promo', ('True', True), ('False', False))
+        split('show_promo', ('T', True), ('F', False))
+
+        ...an exception should be thrown.
+        """
+        backend = FakeBackend()
+        created = Experiment(
+            backend=backend,
+            name='show_promo',
+            started_on=datetime.utcnow(),
+            variants=['True', 'False']
+        )
+        get_experiment.side_effect = [
+            None,  # the first call fails
+            created,  # but the second call succeeds after a successful save
+            created
+        ]
+        cleaver = Cleaver({}, FakeIdentityProvider(), backend)
+
+        assert cleaver.split('show_promo') in (True, False)
+        get_experiment.assert_called_with('show_promo', ('True', 'False'))
+        save_experiment.assert_called_with('show_promo', ('True', 'False'))
+
+        self.assertRaises(
+            RuntimeError,
+            cleaver.split,
+            'show_promo',
+            ('T', True),
+            ('F', False)
+        )
+
+    @patch.object(FakeBackend, 'get_experiment')
     def test_experiment_get(self, get_experiment):
         backend = FakeBackend()
         get_experiment.return_value = Experiment(
@@ -92,6 +130,7 @@ class TestSplit(TestCase):
             get_experiment, random_variant):
         cleaver = Cleaver({}, FakeIdentityProvider(), FakeBackend())
         get_experiment.return_value.name = 'show_promo'
+        get_experiment.return_value.variants = ('True', 'False')
         get_identity.return_value = 'ABC123'
         random_variant.return_value = iter(['True'])
 

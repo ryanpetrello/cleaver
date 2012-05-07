@@ -73,9 +73,16 @@ class Cleaver(object):
 
         # Record the experiment if it doesn't exist already
         experiment = b.get_experiment(experiment_name, keys)
+
         if experiment is None:
             b.save_experiment(experiment_name, keys)
             experiment = b.get_experiment(experiment_name, keys)
+        else:
+            if set(experiment.variants) != set(keys):
+                raise RuntimeError(
+                    'An experiment named %s already exists with different ' \
+                        'variants.' % experiment_name
+                )
 
         # Retrieve the variant assigned to the current user
         variant = b.get_variant(self.identity, experiment.name)
