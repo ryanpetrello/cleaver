@@ -104,10 +104,10 @@ Tests can be run with ``python setup.py test`` or ``tox``.
 
 All contributions must:
 
-    * Include accompanying tests.
-    * Include narrative and API documentation if new features are added.
-    * Be (generally) compliant with PEP8.
-    * Not break the test or build. Before issuing a pull request, ``$ pip
-      install tox && tox`` from your source to ensure that all tests still pass
-      across multiple versions of Python.
-    * Add your name to the (bottom of the) AUTHORS file.
+* Include accompanying tests.
+* Include narrative and API documentation if new features are added.
+* Be (generally) compliant with PEP8.
+* Not break the tests or build. Before issuing a pull request, ``$ pip
+  install tox && tox`` from your source to ensure that all tests still pass
+  across multiple versions of Python.
+* Add your name to the (bottom of the) AUTHORS file.
