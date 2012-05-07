@@ -40,6 +40,10 @@ class TestBase(TestCase):
 
         assert cleaver.identity == 'ABC123'
 
+    def test_callable_identity(self):
+        cleaver = Cleaver({}, lambda environ: 'ABC456', FakeBackend())
+        assert cleaver.identity == 'ABC456'
+
 
 class TestSplit(TestCase):
 

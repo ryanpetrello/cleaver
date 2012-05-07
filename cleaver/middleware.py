@@ -11,7 +11,9 @@ class SplitMiddleware(object):
         ``environ['cleaver']``.
 
         :param identity any implementation of
-                            ``cleaver.identity.CleaverIdentityProvider``
+                          ``identity.CleaverIdentityProvider`` or
+                          a callable that emulates
+                          ``identity.CleaverIdentityProvider.get_identity``.
         :param backend any implementation of
                             ``cleaver.backend.CleaverBackend``
         :param environ_key location where the Cleaver instance will be keyed in
@@ -19,10 +21,11 @@ class SplitMiddleware(object):
         """
         self.app = app
 
-        if not isinstance(identity, CleaverIdentityProvider):
+        if not isinstance(identity, CleaverIdentityProvider) and \
+            not callable(identity):
             raise RuntimeError(
-                '%s must implement cleaver.identity.CleaverIdentityProvider' \
-                    % identity
+                '%s must be callable or implement ' \
+                    'cleaver.identity.CleaverIdentityProvider' % identity
             )
         if not isinstance(backend, CleaverBackend):
             raise RuntimeError(

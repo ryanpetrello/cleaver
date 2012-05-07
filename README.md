@@ -12,20 +12,21 @@ Cleaver is inspired by [ABingo](<http://www.bingocardcreator.com/abingo>), [Spli
 
 ## Starting an Experiment
 
-Starting a new A/B test is easy.  Use this code anywhere within the context of
-an HTTP request to automatically segment visitors:
+Starting a new A/B test is *easy*.  Use this code anywhere within the context
+of an HTTP request (like a controller or a template) to start automatically
+segmenting visitors:
 
     cleaver = request.environ['cleaver']
     
     # Start a new A/B experiment, returning True or False
     show_promo = cleaver.split('show_promo')
     
-    # ...later, when the user completes the test, store the conversion...
+    # ...later, when the user completes the experiment, score the conversion...
     cleaver.score('show_promo')
 
-## Specifying Alternatives
+## Specifying Variants
 
-Cleaver can also be used to specify an arbitrary number of alternatives:
+Cleaver can also be used to specify an arbitrary number of variants:
 
     cleaver = request.environ['cleaver']
     
@@ -37,30 +38,59 @@ Cleaver can also be used to specify an arbitrary number of alternatives:
         ('Blue', '#00F')
     )
 
-## Configuring Cleaver
+## Weighted Variants
+
+Maybe you only want to present an experimental change to a small portion of
+your user base.  Variant weights make this simple - just add a third integer
+argument to each variant.
+    
+    cleaver = request.environ['cleaver']
+    
+    background_color = cleaver.split(
+        'show_new_experimental_feature',
+        ('True', True, 1),
+        ('False', False, 9)
+    )
+
+The default weight for variants, when left unspecified, is 1.
+
+## Adding Cleaver to Your Application
 
 Cleaver works out of the box with most WSGI frameworks.  To get started, wrap
-your WSGI application with ``cleaver.SplitMiddleware``:
+any WSGI application with ``cleaver.SplitMiddleware``.  For example:
 
     from cleaver import SplitMiddleware
-    from cleaver.identity.cookie import CookieIdentityProvider
     from cleaver.backend.sqlite import SQLiteBackend
 
     def simple_app(environ, start_response):
         # Get the session object from the environ
         cleaver = environ['cleaver']
 
-        price = cleaver(
-            'Half-Off Promotional Price',
-            ('$50', '$50'),
-            ('$25', '$25 (Today Only!)')
+        button_size = cleaver(
+            'Button Size',
+            ('Small', 12),
+            ('Medium', 18),
+            ('Large', 24)
         )
 
-        start_response('200 OK', [('Content-type', 'text/plain')])
-        return ['Sign up for %s' % price]
+        start_response('200 OK', [('Content-type', 'text/html')])
+        return ['<button style="font-size:%spx;">Sign Up Now!</button>' % button_size]
 
     wsgi_app = SplitMiddleware(
         simple_app,
-        CookieIdentityProvider('cookie_name'),
+        lambda environ: environ.get('current_user_id', 'anonymous'),
         SQLiteBackend(':memory:')
     )
+
+``cleaver.SplitMiddleware`` requires an identity and backend adaptor (for
+recognizing returning visitors and storing statistical data).  Luckily, Cleaver
+comes with a few out of the box, such as support for [Beaker
+sessions](http://beaker.groovie.org/), and the [SQLite](http://www.sqlite.org/)
+and [MongoDB](http://www.mongodb.org/) storage engines.  Implementing your own
+is easy too - just have a look at the full documentation <link>.
+
+## Analyzing Results
+
+Bacon ipsum dolor sit amet meatball rump t-bone beef ribs, turducken speck
+shoulder. Corned beef prosciutto pig, rump tenderloin spare ribs salami sausage
+turducken pork loin t-bone chuck kielbasa strip steak.

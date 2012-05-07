@@ -16,15 +16,18 @@ class Cleaver(object):
         ``request.environ['cleaver']``.
 
         :param identity any implementation of
-                          ``cleaver.identity.CleaverIdentityProvider``
+                          ``identity.CleaverIdentityProvider`` or
+                          a callable that emulates
+                          ``identity.CleaverIdentityProvider.get_identity``.
         :param backend any implementation of
-                          ``cleaver.backend.CleaverBackend``
+                          ``backend.CleaverBackend``
         """
 
-        if not isinstance(identity, CleaverIdentityProvider):
+        if not isinstance(identity, CleaverIdentityProvider) and \
+            not callable(identity):
             raise RuntimeError(
-                '%s must implement cleaver.identity.CleaverIdentityProvider' \
-                    % identity
+                '%s must be callable or implement ' \
+                    'cleaver.identity.CleaverIdentityProvider' % identity
             )
         if not isinstance(backend, CleaverBackend):
             raise RuntimeError(
@@ -36,7 +39,9 @@ class Cleaver(object):
 
     @property
     def identity(self):
-        return self._identity.get_identity(self._environ)
+        if hasattr(self._identity, 'get_identity'):
+            return self._identity.get_identity(self._environ)
+        return self._identity(self._environ)
 
     def split(self, experiment_name, *variants):
         """
