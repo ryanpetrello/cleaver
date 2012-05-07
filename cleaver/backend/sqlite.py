@@ -1,3 +1,4 @@
+from datetime import datetime
 import sqlite3
 
 from cleaver.experiment import Experiment
@@ -13,7 +14,10 @@ class SQLiteBackend(CleaverBackend):
     """
 
     def __init__(self, db=':memory:'):
-        self._conn = sqlite3.connect(db)
+        self._conn = sqlite3.connect(
+            db,
+            detect_types=sqlite3.PARSE_DECLTYPES | sqlite3.PARSE_COLNAMES
+        )
         self._conn.row_factory = sqlite3.Row
 
         self.execute(
@@ -28,7 +32,8 @@ class SQLiteBackend(CleaverBackend):
             "CREATE TABLE IF NOT EXISTS i (" \
                 "identity TEXT PRIMAY KEY," \
                 "experiment_name TEXT," \
-                "variant TEXT" \
+                "variant TEXT," \
+                "PRIMARY KEY (identity, experiment_name)"
             ")"
         )
         self.execute(
@@ -60,13 +65,13 @@ class SQLiteBackend(CleaverBackend):
             backend=self,
             name=row['name'],
             started_on=row['started_on'],
-            variants=[
+            variants=tuple(
                 v['name']
                 for v in self.execute(
                     "SELECT * FROM v WHERE experiment_name = ?",
                     (row['name'],)
                 )
-            ]
+            )
         )
 
     def all_experiments(self):
@@ -76,7 +81,9 @@ class SQLiteBackend(CleaverBackend):
         Returns a list of ``cleaver.experiment.Experiment``s
         """
         experiments = []
-        for row in self.execute("SELECT * FROM e"):
+        for row in self.execute(
+            'SELECT name, started_on as "started_on [timestamp]" FROM e'
+        ):
             experiments.append(self.experiment_factory(row))
         return experiments
 
@@ -90,7 +97,8 @@ class SQLiteBackend(CleaverBackend):
         Returns a ``cleaver.experiment.Experiment`` or ``None``
         """
         row = self.execute(
-            "SELECT * FROM e WHERE name=?",
+            'SELECT name, started_on as "started_on [timestamp]" FROM e ' \
+                'WHERE name=?',
             (name,)
         ).fetchone()
         return self.experiment_factory(row) if row else None
@@ -102,7 +110,10 @@ class SQLiteBackend(CleaverBackend):
         :param name a unique string name for the experiment
         :param variants a list of strings, each with a unique variant name
         """
-        self.execute('INSERT INTO e (name) VALUES (?)', (name,))
+        self.execute('INSERT INTO e (name, started_on) VALUES (?, ?)', (
+            name,
+            datetime.utcnow()
+        ))
         for v in variants:
             self.execute(
                 'INSERT INTO v (name, experiment_name) VALUES (?, ?)',
@@ -134,7 +145,7 @@ class SQLiteBackend(CleaverBackend):
         :param variant the string name of the variant
         """
         self.execute(
-            'INSERT INTO i (identity, experiment_name, variant) ' \
+            'INSERT OR IGNORE INTO i (identity, experiment_name, variant) ' \
                 'VALUES (?, ?, ?)',
             (identity, experiment_name, variant)
         )
