@@ -1,9 +1,8 @@
-from random import randint
-from bisect import bisect
 from itertools import izip_longest
 
 from .backend import CleaverBackend
 from .identity import CleaverIdentityProvider
+import util
 
 
 class Cleaver(object):
@@ -75,7 +74,7 @@ class Cleaver(object):
         variant = b.get_variant(self.identity, experiment.name)
         if variant is None:
             # ...or choose (and store) one randomly if it doesn't exist yet...
-            variant = self._random_variant(keys, weights).next()
+            variant = util.random_variant(keys, weights).next()
             b.participate(self.identity, experiment.name, variant)
 
         return dict(zip(keys, values))[variant]
@@ -101,13 +100,3 @@ class Cleaver(object):
         )
 
         return izip_longest(*variants)
-
-    def _random_variant(self, variants, weights):
-        total = 0
-        accumulator = []
-        for w in weights:
-            total += w
-            accumulator.append(total)
-
-        r = randint(0, total - 1)
-        yield variants[bisect(accumulator, r)]

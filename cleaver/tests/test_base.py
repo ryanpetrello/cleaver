@@ -1,5 +1,6 @@
 from unittest import TestCase
 from datetime import datetime
+import timeit
 
 from mock import patch
 
@@ -76,7 +77,7 @@ class TestSplit(TestCase):
         assert cleaver.split('show_promo') in (True, False)
         get_experiment.assert_called_with('show_promo', ('True', 'False'))
 
-    @patch.object(Cleaver, '_random_variant')
+    @patch('cleaver.util.random_variant')
     @patch.object(FakeBackend, 'get_experiment')
     @patch.object(FakeBackend, 'participate')
     @patch.object(FakeIdentityProvider, 'get_identity')
@@ -141,3 +142,48 @@ class TestVariants(TestCase):
             ('#F00', '#0F0', '#00F'),
             (1, 2, 5)
         )
+
+    def test_random_choice_speed(self):
+        """
+        Since it's potentially happening for each new visitor, weighted random
+        choice should be very lightning fast for large numbers of variants
+        *and* very large weights.
+        """
+
+        # Choose a random variant from 1K variants, each with a weight of 1M...
+        elapsed = timeit.Timer(
+            "random_variant(range(10000), repeat(1000000, 1000)).next()",
+            "".join([
+                "from cleaver.util import random_variant; "
+                "from itertools import repeat"
+            ])
+        ).timeit(1)
+
+        #
+        # ...and make sure it calculates within a thousandth of a second.
+        # This boundary is completely non-scientific, isn't based on any
+        # meaningful research, and it's possible that this test could fail on
+        # especially old/slow hardware/platforms.
+        #
+        # The goal here isn't to assert some speed benchmark, but to prevent
+        # changes to the selection algorithm that could decrease performance
+        # in a significant way.
+        #
+        # The assumption is that a sufficiently slow/naive and
+        # memory-inefficient algorithm, like the following:
+        #
+        # import random
+        # from itertools import repeat
+        #
+        # def random_variant(weights):
+        #     dist = []
+        #     for v in weights.keys():
+        #         dist += str(weights[v]) * v
+        #
+        #     return random.choice(dist)
+        #
+        # random_variant(dict(zip(range(10000), repeat(1000000))))
+        #
+        # ...would cause this test to fail.
+        #
+        assert elapsed < 0.01
