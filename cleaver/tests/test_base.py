@@ -43,6 +43,14 @@ class TestBase(TestCase):
 
 class TestSplit(TestCase):
 
+    def test_experiment_name_must_be_a_string(self):
+        cleaver = Cleaver({}, FakeIdentityProvider(), FakeBackend())
+        self.assertRaises(
+            RuntimeError,
+            cleaver.split,
+            500
+        )
+
     @patch.object(FakeBackend, 'get_experiment')
     @patch.object(FakeBackend, 'save_experiment')
     def test_experiment_save(self, save_experiment, get_experiment):
@@ -106,7 +114,7 @@ class TestVariants(TestCase):
 
     def test_true_false(self):
         c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
-        assert tuple(c._parse_variants([])) == (
+        assert tuple(c._parse_variants(())) == (
             ('True', 'False'),
             (True, False),
             (1, 1)
@@ -114,9 +122,9 @@ class TestVariants(TestCase):
 
     def test_a_b(self):
         c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
-        assert tuple(c._parse_variants([
+        assert tuple(c._parse_variants((
             ('red', '#F00'), ('green', '#0F0')
-        ])) == (
+        ))) == (
             ('red', 'green'),
             ('#F00', '#0F0'),
             (1, 1)
@@ -124,9 +132,9 @@ class TestVariants(TestCase):
 
     def test_multivariate(self):
         c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
-        assert tuple(c._parse_variants([
+        assert tuple(c._parse_variants((
             ('red', '#F00'), ('green', '#0F0'), ('blue', '#00F')
-        ])) == (
+        ))) == (
             ('red', 'green', 'blue'),
             ('#F00', '#0F0', '#00F'),
             (1, 1, 1)
@@ -134,10 +142,26 @@ class TestVariants(TestCase):
 
     def test_weighted_variants(self):
         c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
-        assert tuple(c._parse_variants([
+        assert tuple(c._parse_variants((
             ('red', '#F00', 1), ('green', '#0F0', 2), ('blue', '#00F', 5)
-        ])) == (
+        ))) == (
             ('red', 'green', 'blue'),
             ('#F00', '#0F0', '#00F'),
             (1, 2, 5)
+        )
+
+    def test_variants_must_be_strings(self):
+        c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
+        self.assertRaises(
+            RuntimeError,
+            c._parse_variants,
+            ((5, 'five'), (8, 'eight'))
+        )
+
+    def test_variant_weights_must_be_integers(self):
+        c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
+        self.assertRaises(
+            RuntimeError,
+            c._parse_variants,
+            (('red', '#F00', .5), ('green', '#0F0', 2.5))
         )

@@ -61,6 +61,13 @@ class Cleaver(object):
 
             >>> split('text_color', ('red', '#F00', 2), ('blue', '#00F', 4))
         """
+        # Perform some minimal type checking
+        if not isinstance(experiment_name, basestring):
+            raise RuntimeError(
+                'Invalid experiment name: %s must be a basestring.' % \
+                    experiment_name
+            )
+
         keys, values, weights = self._parse_variants(variants)
         b = self._backend
 
@@ -94,8 +101,26 @@ class Cleaver(object):
         if not len(variants):
             variants = [('True', True), ('False', False)]
 
+        def add_default_weight(v):
+            if len(v) < 3:
+                v = tuple(list(v) + [1])
+
+            # Perform some minimal type checking
+            if not isinstance(v[0], basestring):
+                raise RuntimeError(
+                    'Invalid variant name: %s must be a basestring.' % \
+                        v[0]
+                )
+            if not isinstance(v[2], int):
+                raise RuntimeError(
+                    'Invalid variant weight: %s must be an integer.' % \
+                        v[2]
+                )
+
+            return v
+
         variants = map(
-            lambda v: tuple(list(v) + [1]) if len(v) < 3 else v,
+            add_default_weight,
             variants
         )
 
