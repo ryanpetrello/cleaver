@@ -1,6 +1,3 @@
-from random import choice
-
-
 class Experiment(object):
     """
     Represents an experiment record and related utilities.
@@ -29,9 +26,6 @@ class Experiment(object):
         return sum(
             self.backend.conversions(self.name, v) for v in self.variants
         )
-
-    def random_variant(self, weights={}):
-        return choice(self.variants)
 
     @property
     def winner(self):

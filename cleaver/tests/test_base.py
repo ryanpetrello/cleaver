@@ -48,13 +48,13 @@ class TestSplit(TestCase):
     def test_experiment_save(self, save_experiment, get_experiment):
         backend = FakeBackend()
         get_experiment.side_effect = [
-            None, # the first call fails
+            None,  # the first call fails
             Experiment(
                 backend=backend,
                 name='show_promo',
                 started_on=datetime.utcnow(),
                 variants=['True', 'False']
-            ) # but the second call succeeds after a successful save
+            )  # but the second call succeeds after a successful save
         ]
         cleaver = Cleaver({}, FakeIdentityProvider(), backend)
 
@@ -76,15 +76,16 @@ class TestSplit(TestCase):
         assert cleaver.split('show_promo') in (True, False)
         get_experiment.assert_called_with('show_promo', ('True', 'False'))
 
+    @patch.object(Cleaver, '_random_variant')
     @patch.object(FakeBackend, 'get_experiment')
     @patch.object(FakeBackend, 'participate')
     @patch.object(FakeIdentityProvider, 'get_identity')
     def test_variant_participation(self, get_identity, participate,
-            get_experiment):
+            get_experiment, random_variant):
         cleaver = Cleaver({}, FakeIdentityProvider(), FakeBackend())
         get_experiment.return_value.name = 'show_promo'
-        get_experiment.return_value.random_variant.return_value = 'True'
         get_identity.return_value = 'ABC123'
+        random_variant.return_value = iter(['True'])
 
         assert cleaver.split('show_promo') in (True, False)
         participate.assert_called_with('ABC123', 'show_promo', 'True')
@@ -129,4 +130,14 @@ class TestVariants(TestCase):
             ('red', 'green', 'blue'),
             ('#F00', '#0F0', '#00F'),
             (1, 1, 1)
+        )
+
+    def test_weighted_variants(self):
+        c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
+        assert tuple(c._parse_variants([
+            ('red', '#F00', 1), ('green', '#0F0', 2), ('blue', '#00F', 5)
+        ])) == (
+            ('red', 'green', 'blue'),
+            ('#F00', '#0F0', '#00F'),
+            (1, 2, 5)
         )
