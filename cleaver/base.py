@@ -101,9 +101,13 @@ class Cleaver(object):
         if not len(variants):
             variants = [('True', True), ('False', False)]
 
-        def add_default_weight(v):
+        def add_defaults(v):
             if len(v) < 3:
-                v = tuple(list(v) + [1])
+                v = tuple(
+                    list(v) + (
+                        [None, 1] if len(v) == 1 else [1]
+                    )
+                )
 
             # Perform some minimal type checking
             if not isinstance(v[0], basestring):
@@ -120,7 +124,7 @@ class Cleaver(object):
             return v
 
         variants = map(
-            add_default_weight,
+            add_defaults,
             variants
         )
 

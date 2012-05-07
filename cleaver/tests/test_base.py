@@ -158,6 +158,39 @@ class TestVariants(TestCase):
             ((5, 'five'), (8, 'eight'))
         )
 
+    def test_variants_with_empty_value(self):
+        """
+        Variants where the value is None should be acceptable.
+        """
+        c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
+        assert tuple(c._parse_variants((('five', 5), ('nothing', None)))) == (
+            ('five', 'nothing'),
+            (5, None),
+            (1, 1)
+        )
+
+    def test_variants_with_missing_values(self):
+        """
+        Variants with missing values should default to None
+        """
+        c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
+        assert tuple(c._parse_variants((('five', 5, 2), ('nothing',)))) == (
+            ('five', 'nothing'),
+            (5, None),
+            (2, 1)
+        )
+
+    def test_variants_with_missing_weights(self):
+        """
+        Variants with missing weights should default to 1
+        """
+        c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
+        assert tuple(c._parse_variants((('five', 5, 10), ('two', 2)))) == (
+            ('five', 'two'),
+            (5, 2),
+            (10, 1)
+        )
+
     def test_variant_weights_must_be_integers(self):
         c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
         self.assertRaises(
