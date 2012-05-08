@@ -52,10 +52,6 @@ class Experiment(object):
     def conversions_for(self, variant):
         return self.backend.conversions(self.name, variant)
 
-    @property
-    def winner(self):
-        pass
-
     @classmethod
     def all(cls, backend):
         return backend.all_experiments()
@@ -88,7 +84,7 @@ class VariantStat(object):
         """
         Calculate the Z-Score between this alternative and the project control.
 
-        See:
+        Statistical formulas based on:
         http://20bits.com/article/statistical-analysis-and-ab-testing
         """
         control = VariantStat(self.experiment.control, self.experiment)
@@ -122,9 +118,9 @@ class VariantStat(object):
         if z == 0.0:
             return "No Change"
         elif z < 1.65:
-            return "No Confident"
+            return "No Confidence"
         elif z < 2.33:
-            return "95% Confident"
+            return "95% Confidence"
         elif z < 3.08:
-            return "99% Concident"
-        return "99.9% Confident"
+            return "99% Confidence"
+        return "99.9% Confidence"

@@ -11,23 +11,17 @@ __t = lambda p: path.join(
 )
 
 
-def with_backend(f):
-    def wrapped(*args, **kwargs):
-        ns = f(*args, **kwargs)
-        if isinstance(ns, dict):
-            ns['backend'] = request.environ['cleaver.backend']
-
-            def format_percentage(f):
-                return '{:.2%}'.format(f) if f else '-'
-            ns['percentage'] = format_percentage
-        return ns
-    return wrapped
+def format_percentage(f):
+    return '{:.2%}'.format(f) if f else '-'
 
 
 @app.route('/')
 @view(__t('index'))
-@with_backend
 def index():
+    return dict(
+        backend=request.environ['cleaver.backend'],
+        percentage=format_percentage
+    )
     return dict()
 
 

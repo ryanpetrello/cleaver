@@ -12,6 +12,7 @@
             margin: 0;
         }
         h1  {
+            margin-bottom: 35px;
             display: inline-block;
             background: #A6CD09;
             color: #FFF;
@@ -42,6 +43,7 @@
         }
         div.experiment  {
             background: #F5F5F5;
+            border: 1px solid #F0F0F0;
             padding: 15px;
             padding-top: 5px;
             border-radius: 10px;
@@ -57,7 +59,7 @@
         }
         div.experiment .results  {
             background: #FFF;
-            padding: 5px;
+            padding: 15px;
             border-radius: 10px;
             -moz-border-radius: 10px;
             -webkit-border-radius: 10px;
@@ -67,7 +69,6 @@
         }
         table  {
             border-collapse: collapse;
-            margin: 5px;
             width: 100%;
         }
         th, td  {
@@ -84,7 +85,7 @@
             font-weight: bold;
         }
         td  {
-            border-bottom: 1px solid #EEE;
+            border-bottom: 1px dotted #DDD;
         }
         tr.last td  {
             border-bottom: 0;
@@ -200,7 +201,7 @@
                         <td colspan="3" class="left"><b>Total</b></td>
                         <td>{{e.participants or '-'}}</td>
                         <td>{{e.conversions or '-'}}</td>
-                        <td colspan="4"></td>
+                        <td colspan="3"></td>
                     </tr>
                 </table>
             </div>
