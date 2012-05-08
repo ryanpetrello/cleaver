@@ -35,6 +35,9 @@ class CleaverBackend(object):
         """
         Persist an experiment and its variants (unless they already exist).
 
+        Variants should be stored in such a way that *order can be guaranteed*
+        on retrieval.
+
         :param name a unique string name for the experiment
         :param variants a list of strings, each with a unique variant name
         """
