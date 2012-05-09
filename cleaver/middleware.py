@@ -1,5 +1,5 @@
 from .base import Cleaver
-from .compat import urlencode, parse_qsl
+from .compat import urlencode, parse_qs, parse_qsl
 from .backend import CleaverBackend
 from .identity import CleaverIdentityProvider
 
@@ -7,7 +7,8 @@ from .identity import CleaverIdentityProvider
 class SplitMiddleware(object):
 
     def __init__(self, app, identity, backend, environ_key='cleaver',
-            allow_override=False, require_human_verification=False):
+            allow_override=False, require_human_verification=False,
+            human_callback_token='__cleaver_human_verification__'):
         """
         Makes a Cleaver instance available every request under
         ``environ['cleaver']``.
@@ -26,10 +27,14 @@ class SplitMiddleware(object):
                               http://mypythonapp.com?cleaver:button_size=small
 
                               Especially useful for tests and QA.
-        :param require_human_verification When False, every request (including
+        :param require_human_verification when False, every request (including
                                           those originating from bots and web
                                           crawlers) is treated as a unique
                                           visit (defaults to False).
+        :param human_callback_token when ``require_human_verification`` is
+                                         True, this token in the URL will
+                                         trigger a simple verification process
+                                         for humans.
         """
         self.app = app
 
@@ -49,17 +54,54 @@ class SplitMiddleware(object):
         self.environ_key = environ_key
         self.allow_override = allow_override
         self.require_human_verification = require_human_verification
+        self.human_callback_token = human_callback_token
 
     def __call__(self, environ, start_response):
-        environ[self.environ_key] = Cleaver(
+        cleaver = Cleaver(
             environ,
             self._identity,
             self._backend,
             require_human_verification=self.require_human_verification
         )
+        environ[self.environ_key] = cleaver
 
         if self.allow_override:
             self._handle_variant_overrides(environ)
+
+        #
+        # If human verification is required and this request represents
+        # a valid AJAX callback (which bots aren't generally capable of), then
+        # mark the visitor as human.
+        #
+        if self.require_human_verification and \
+            environ.get('METHOD', '') == 'POST' and \
+            self.human_callback_token in environ.get('PATH_INFO', ''):
+
+            qs = parse_qs(environ.get('QUERY_STRING', ''))
+            x = qs.get('x')
+            y = qs.get('y')
+            z = qs.get('z')
+            try:
+                # The AJAX call will include three POST arguments, X, Y, and Z
+                #
+                # Part of the "not a robot test" is validating that X + Y = Z
+                # (most web crawlers won't perform complicated Javascript
+                # execution like math and HTTP callbacks, because it's just too
+                # expensive at scale)
+                if x and y and z and int(x) + int(y) == int(z):
+                    # Mark the visitor as a human
+                    self._backend.mark_human(cleaver.identity)
+                    # If the visitor has been assigned any experiment variants,
+                    # tally their participation.
+                    for e in self._backend.all_experiments():
+                        variant = self._backend.get_variant(
+                            cleaver.identity,
+                            e.name
+                        )
+                        if variant:
+                            self._backend.mark_participant(e.name, variant)
+            except ValueError:
+                pass
 
         return self.app(environ, start_response)
 
