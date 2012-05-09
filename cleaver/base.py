@@ -118,6 +118,12 @@ class Cleaver(object):
         if not len(variants):
             variants = [('True', True), ('False', False)]
 
+        if len(variants) == 1:
+            raise RuntimeError(
+                'Experiments must have at least two variants ' \
+                    '(a control and an alternative).'
+            )
+
         def add_defaults(v):
             if len(v) < 3:
                 v = tuple(

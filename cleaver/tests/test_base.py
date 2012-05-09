@@ -155,6 +155,14 @@ class TestSplit(TestCase):
 
 class TestVariants(TestCase):
 
+    def test_minimum_two_arguments(self):
+        c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
+        self.assertRaises(
+            RuntimeError,
+            c._parse_variants,
+            (('red', '#F00'),)
+        )
+
     def test_true_false(self):
         c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
         assert tuple(c._parse_variants(())) == (
