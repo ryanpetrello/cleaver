@@ -2,8 +2,10 @@ import math
 
 from .compat import string_types
 
+__all__ = ['Experiment', 'VariantStat']
 
-def memoize(function):
+
+def _memoize(function):
     cache = {}
 
     def decorated(*args):
@@ -32,30 +34,58 @@ class Experiment(object):
 
     @property
     def control(self):
+        """
+        The control (first alternative) for this experiment.
+
+        Returns a string.
+        """
         return self.variants[0]
 
     @property
     def participants(self):
+        """
+        The number of participants in this experiment.
+
+        Returns a > 0 integer.
+        """
         return sum(
             self.participants_for(v) for v in self.variants
         )
 
     @property
     def conversions(self):
+        """
+        The number of conversions in this experiment.
+
+        Returns a > 0 integer.
+        """
         return sum(
             self.conversions_for(v) for v in self.variants
         )
 
-    @memoize
+    @_memoize
     def participants_for(self, variant):
+        """
+        The number of participants for a certain variant of this experiment.
+
+        Returns a > 0 integer.
+        """
         return self.backend.participants(self.name, variant)
 
-    @memoize
+    @_memoize
     def conversions_for(self, variant):
+        """
+        The number of conversions for a certain variant of this experiment.
+
+        Returns a > 0 integer.
+        """
         return self.backend.conversions(self.name, variant)
 
     @classmethod
     def all(cls, backend):
+        """
+        A list of every existing Experiment.
+        """
         return backend.all_experiments()
 
     def __repr__(self):
@@ -65,6 +95,9 @@ class Experiment(object):
 
 
 class VariantStat(object):
+    """
+    Used to calculate statistics related to Experiment variants.
+    """
 
     def __init__(self, name, experiment):
         self.name = name
@@ -72,10 +105,20 @@ class VariantStat(object):
 
     @property
     def participant_count(self):
+        """
+        The number of participants for this variant.
+
+        Returns a > 0 integer.
+        """
         return self.experiment.participants_for(self.name)
 
     @property
     def conversion_rate(self):
+        """
+        The percentage of participants that have converted for this variant.
+
+        Returns a > 0 float representing a percentage rate.
+        """
         participants = self.participant_count
         if participants == 0:
             return 0.0
@@ -111,6 +154,11 @@ class VariantStat(object):
 
     @property
     def confidence_level(self):
+        """
+        Based on the variant's Z-Score, returns a human-readable string that
+        describes the confidence with which we can say the results are
+        statistically significant.
+        """
         z = self.z_score
         if isinstance(z, string_types):
             return z

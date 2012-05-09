@@ -39,6 +39,9 @@ class Cleaver(object):
 
     @property
     def identity(self):
+        """
+        A unique identifier for the current visitor.
+        """
         if hasattr(self._identity, 'get_identity'):
             return self._identity.get_identity(self._environ)
         return self._identity(self._environ)
@@ -100,7 +103,9 @@ class Cleaver(object):
 
     def score(self, experiment_name):
         """
-        Used to mark the current experiment variant as "converted".
+        Used to mark the current user's experiment variant as "converted" e.g.,
+
+        "Suzy, who was shown the large button just signed up."
 
         :param experiment_name the string name of the experiment
         """

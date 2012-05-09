@@ -5,6 +5,10 @@ __all__ = ['random_variant']
 
 
 def random_variant(variants, weights):
+    """
+    A generator that, given a list of variants and a corresponding list of
+    weights, returns one random weighted selection.
+    """
     total = 0
     accumulator = []
     for w in weights:
