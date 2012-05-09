@@ -1,11 +1,13 @@
 from .base import Cleaver
+from .compat import urlencode, parse_qsl
 from .backend import CleaverBackend
 from .identity import CleaverIdentityProvider
 
 
 class SplitMiddleware(object):
 
-    def __init__(self, app, identity, backend, environ_key='cleaver'):
+    def __init__(self, app, identity, backend, environ_key='cleaver',
+            allow_override=False):
         """
         Makes a Cleaver instance available every request under
         ``environ['cleaver']``.
@@ -17,7 +19,13 @@ class SplitMiddleware(object):
         :param backend any implementation of
                             ``cleaver.backend.CleaverBackend``
         :param environ_key location where the Cleaver instance will be keyed in
-                            the WSGI environ
+                           the WSGI environ
+        :param allow_override when True, specific variants can be overriden via
+                              the request query string, e.g.,
+
+                              http://mypythonapp.com?cleaver:button_size=small
+
+                              Especially useful for tests and QA.
         """
         self.app = app
 
@@ -35,6 +43,7 @@ class SplitMiddleware(object):
         self._identity = identity
         self._backend = backend
         self.environ_key = environ_key
+        self.allow_override = allow_override
 
     def __call__(self, environ, start_response):
         environ[self.environ_key] = Cleaver(
@@ -42,4 +51,28 @@ class SplitMiddleware(object):
             self._identity,
             self._backend
         ).split
+
+        if self.allow_override:
+            self._handle_variant_overrides(environ)
+
         return self.app(environ, start_response)
+
+    def _handle_variant_overrides(self, environ):
+        # Parse the QUERY_STRING into a dictionary, and make an editable copy
+        parsed = dict(parse_qsl(environ.get('QUERY_STRING', '')))
+        qs = parsed.copy()
+
+        # For each key that starts with cleaver: ...
+        for k in parsed:
+            if k.startswith('cleaver:'):
+                # Store the key -> value in ``environ['cleaver.override']``
+                # and remove it from the editable ``qs`` copy.
+                environ.setdefault('cleaver.override', {})[
+                    k.split('cleaver:')[1]
+                ] = qs.pop(k)
+
+        # If any overriden variables were changed, re-encode QUERY_STRING so
+        # that the next WSGI layer doesn't see the parsed ``cleaver:``
+        # arguments.
+        if 'cleaver.override' in environ:
+            environ['QUERY_STRING'] = urlencode(qs)

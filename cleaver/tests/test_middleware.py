@@ -1,8 +1,10 @@
 from unittest import TestCase
+from wsgiref.util import setup_testing_defaults
 import inspect
 
 from . import FakeIdentityProvider, FakeBackend
 from cleaver import SplitMiddleware
+from cleaver.compat import urlencode
 
 
 class TestMiddleware(TestCase):
@@ -15,8 +17,9 @@ class TestMiddleware(TestCase):
             return ['Hello world!\n']
         return a
 
-    def _make_request(self, **kw):
-        environ = {}
+    def _make_request(self, environ=None, **kw):
+        environ = environ or {}
+        setup_testing_defaults(environ)
 
         def start_response(status, response_headers, exc_info=None):
             self._status = status
@@ -56,3 +59,68 @@ class TestMiddleware(TestCase):
         assert 'cleaver' not in environ
         assert 'xyz' in environ
         assert inspect.ismethod(environ['xyz'])
+
+    def test_cleaver_override_disabled(self):
+        environ = self._make_request({
+            'QUERY_STRING': urlencode({
+                'cleaver:show_promo': 'False'
+            })
+        })
+
+        assert environ['QUERY_STRING'] == urlencode({
+            'cleaver:show_promo': 'False'
+        })
+        assert 'cleaver.override' not in environ
+
+    def test_cleaver_override_variable_consumption(self):
+        environ = self._make_request({
+            'QUERY_STRING': urlencode({
+                'cleaver:show_promo': 'False'
+            })
+        }, allow_override=True)
+
+        assert environ['QUERY_STRING'] == ''
+        assert environ['cleaver.override'] == {
+            'show_promo': 'False'
+        }
+
+    def test_cleaver_override_variable_consumption_with_colons(self):
+        environ = self._make_request({
+            'QUERY_STRING': urlencode({
+                'cleaver:a:b': 'Yes'
+            })
+        }, allow_override=True)
+
+        assert environ['QUERY_STRING'] == ''
+        assert environ['cleaver.override'] == {
+            'a:b': 'Yes'
+        }
+
+    def test_cleaver_override_with_multiple_variable_consumption(self):
+        environ = self._make_request({
+            'QUERY_STRING': urlencode({
+                'cleaver:show_promo': 'False',
+                'cleaver:Button Size': 'large'
+            })
+        }, allow_override=True)
+
+        assert environ['QUERY_STRING'] == ''
+        assert environ['cleaver.override'] == {
+            'show_promo': 'False',
+            'Button Size': 'large'
+        }
+
+    def test_cleaver_override_with_mixed_query_args(self):
+        environ = self._make_request({
+            'QUERY_STRING': urlencode({
+                'cleaver:show_promo': 'False',
+                'article': 25,
+                'cleaver:Button Size': 'large'
+            })
+        }, allow_override=True)
+
+        assert environ['QUERY_STRING'] == 'article=25'
+        assert environ['cleaver.override'] == {
+            'show_promo': 'False',
+            'Button Size': 'large'
+        }

@@ -12,7 +12,9 @@ Bloody simple A/B testing for Python WSGI applications:
 
 Cleaver is inspired by [ABingo](<http://www.bingocardcreator.com/abingo>), [Split](<https://rubygems.org/gems/split>) (Rails) and [Dabble](<https://github.com/dcrosta/dabble>) (Python).
 
-## Starting an Experiment
+## Usage
+
+### Starting an Experiment
 
 Starting a new A/B test is *easy*.  Use this code anywhere within the context
 of an HTTP request (like a controller or a template) to start automatically
@@ -26,7 +28,7 @@ segmenting visitors:
     # ...later, when the user completes the experiment, score the conversion...
     cleaver.score('show_promo')
 
-## Specifying Variants
+### Specifying Variants
 
 Cleaver can also be used to specify an arbitrary number of variants:
 
@@ -40,7 +42,7 @@ Cleaver can also be used to specify an arbitrary number of variants:
         ('Blue', '#00F')
     )
 
-## Weighted Variants
+### Weighted Variants
 
 Maybe you only want to present an experimental change to a small portion of
 your user base.  Variant weights make this simple - just add a third integer
@@ -56,7 +58,7 @@ argument to each variant.
 
 The default weight for variants, when left unspecified, is 1.
 
-## Adding Cleaver to Your Application
+### Adding Cleaver to Your WSGI Application
 
 Cleaver works out of the box with most WSGI frameworks.  To get started, wrap
 any WSGI application with ``cleaver.SplitMiddleware``.  For example:
@@ -91,10 +93,28 @@ sessions](http://beaker.groovie.org/), and the [SQLite](http://www.sqlite.org/)
 and [MongoDB](http://www.mongodb.org/) storage engines.  Implementing your own
 is easy too - just have a look at the full documentation <link>.
 
+### Overriding Variants
+For QA and testing purposes, you may need to force your application to always
+return a certain variant.
+
+    wsgi_app = SplitMiddleware(
+        simple_app,
+        ...
+        allow_override=True
+    )
+
+If your application has an experiment called ``button_size`` with variants
+called `small`, `medium`, and `large`, a url in the format:
+
+    http://mypythonapp.com?cleaver:button_size=small
+
+..will always display small buttons. This data won't, however, be stored in
+your session or count towards reporting.
+
 ## Analyzing Results
 
-Cleaver comes with a simple WSGI reporting application which can be used to
-gain insight into experiment results:
+Cleaver comes with a lightweight WSGI front end which can be used to see how
+your experiments are going.
 
     from cleaver.reports.web import CleaverWebUI
     from cleaver.backend.sqlite import SQLiteBackend

@@ -141,6 +141,16 @@ class TestSplit(TestCase):
         assert cleaver.split('show_promo') in (True, False)
         participate.assert_called_with('ABC123', 'show_promo', 'True')
 
+    @patch.object(FakeBackend, 'get_experiment')
+    def test_variant_override(self, get_experiment):
+        cleaver = Cleaver({
+            'cleaver.override': {'show_promo': 'False'}
+        }, FakeIdentityProvider(), FakeBackend())
+        get_experiment.return_value.name = 'show_promo'
+        get_experiment.return_value.variants = ('True', 'False')
+
+        assert cleaver.split('show_promo') == False
+
     @patch.object(FakeBackend, 'score')
     @patch.object(FakeBackend, 'get_variant')
     @patch.object(FakeIdentityProvider, 'get_identity')

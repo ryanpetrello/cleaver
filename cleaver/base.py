@@ -98,11 +98,14 @@ class Cleaver(object):
                 )
 
         # Retrieve the variant assigned to the current user
-        variant = b.get_variant(self.identity, experiment.name)
-        if variant is None:
-            # ...or choose (and store) one randomly if it doesn't exist yet...
-            variant = next(util.random_variant(keys, weights))
-            b.participate(self.identity, experiment.name, variant)
+        if experiment.name in self._environ.get('cleaver.override', {}):
+            variant = self._environ['cleaver.override'][experiment.name]
+        else:
+            variant = b.get_variant(self.identity, experiment.name)
+            if variant is None:
+                # ...or choose (and store) one randomly if it doesn't exist yet
+                variant = next(util.random_variant(keys, weights))
+                b.participate(self.identity, experiment.name, variant)
 
         return dict(zip(keys, values))[variant]
 
