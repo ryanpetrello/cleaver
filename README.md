@@ -1,5 +1,7 @@
 # Cleaver
 
+[ ![Image](https://secure.travis-ci.org/ryanpetrello/cleaver.png "Travis CI") ](http://travis-ci.org/#!/ryanpetrello/cleaver "Travis CI")
+
 Bloody simple A/B testing for Python WSGI applications:
 
 * Present display or behavioral differences in one line of code.
@@ -107,6 +109,7 @@ gain insight into experiment results:
 <img src="http://imgur.com/y1SUf.png" />
 
 ## Development
+
 Source hosted at [GitHub](https://github.com/ryanpetrello/cleaver). Report
 Issues and Feature Requests on [GitHub
 Issues](https://github.com/ryanpetrello/cleaver/issues).
