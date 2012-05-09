@@ -1,4 +1,4 @@
-# Cleaver
+<img src="http://i.imgur.com/P0BrO.png" height="32" />
 
 [ ![Image](https://secure.travis-ci.org/ryanpetrello/cleaver.png "Travis CI") ](http://travis-ci.org/#!/ryanpetrello/cleaver "Travis CI")
 
