@@ -198,10 +198,14 @@
                         </tr>
                     % end
                     <tr class="last">
-                        <td colspan="3" class="left"><b>Total</b></td>
+                        <td class="left"><b>Total</b></td>
+                        <td />
+                        <td />
                         <td>{{e.participants or '-'}}</td>
                         <td>{{e.conversions or '-'}}</td>
-                        <td colspan="3"></td>
+                        <td />
+                        <td />
+                        <td />
                     </tr>
                 </table>
             </div>

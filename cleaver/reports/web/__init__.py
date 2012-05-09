@@ -22,7 +22,6 @@ def index():
         backend=request.environ['cleaver.backend'],
         percentage=format_percentage
     )
-    return dict()
 
 
 class CleaverWebUI(object):
