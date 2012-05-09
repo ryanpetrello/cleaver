@@ -53,21 +53,26 @@ class Cleaver(object):
         :param experiment_name a unique string name for the experiment
         :param *variants can take many forms, depending on usage.
 
-            When no variants are provided, the test falls back to a simple
-            True/False 50/50 split, e.g.,
-
-            >>> sidebar() if split('include_sidebar') else empty()
-
-            Otherwise, variants should be provided as arbitrary tuples in the
+            Variants should be provided as arbitrary tuples in the
             format ('unique_string_label', any_value), ... e.g.,
 
             >>> split('text_color', ('red', '#F00'), ('blue', '#00F'))
+
+            ...where the first variant (in this example, 'red') represents the
+            control and any additional variants represent alternatives.
 
             By default, variants are chosen with equal weight.  You can tip the
             scales if you like by passing a proportional *integer* weight as
             the third element in each variant tuple:
 
             >>> split('text_color', ('red', '#F00', 2), ('blue', '#00F', 4))
+
+            Optionally, variants may be excluded entirely to fall back to
+            a simple True/False 50/50 split, where True is the control and
+            False is the experiment, e.g.,
+
+            >>> sidebar() if split('include_sidebar') else empty()
+
         """
         # Perform some minimal type checking
         if not isinstance(experiment_name, string_types):
