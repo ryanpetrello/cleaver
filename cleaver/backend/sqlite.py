@@ -8,7 +8,7 @@ from cleaver.backend import CleaverBackend
 class SQLiteBackend(CleaverBackend):
     """
     Provides an interface for persisting and retrieving A/B test results
-    to an in-memory SQLite database.
+    to a SQLite database.
 
     Primarily a proof of concept/example implementation.
     """
@@ -20,14 +20,19 @@ class SQLiteBackend(CleaverBackend):
         )
         self._conn.row_factory = sqlite3.Row
 
+        # list of experiments
         self.execute(
             "CREATE TABLE IF NOT EXISTS e " \
                 "(name TEXT PRIMARY KEY, started_on TEXT)"
         )
+
+        # collection of variants for an experiment
         self.execute(
             "CREATE TABLE IF NOT EXISTS v " \
                 "(name TEXT PRIMARY KEY, experiment_name TEXT, _ord INTEGER)"
         )
+
+        # mapping between (identity, experiment_name) and variant
         self.execute(
             "CREATE TABLE IF NOT EXISTS i (" \
                 "identity TEXT PRIMAY KEY," \
@@ -36,6 +41,8 @@ class SQLiteBackend(CleaverBackend):
                 "PRIMARY KEY (identity, experiment_name)"
             ")"
         )
+
+        # counters for participants
         self.execute(
             "CREATE TABLE IF NOT EXISTS p (" \
                 "experiment_name TEXT," \
@@ -44,12 +51,22 @@ class SQLiteBackend(CleaverBackend):
                 "PRIMARY KEY (experiment_name, variant)" \
             ")"
         )
+
+        # counters for conversions
         self.execute(
             "CREATE TABLE IF NOT EXISTS c (" \
                 "experiment_name TEXT," \
                 "variant TEXT," \
                 "total INTEGER DEFAULT 0," \
                 "PRIMARY KEY (experiment_name, variant)" \
+            ")"
+        )
+
+        # verified humans
+        self.execute(
+            "CREATE TABLE IF NOT EXISTS h (" \
+                "identity TEXT," \
+                "PRIMARY KEY (identity)" \
             ")"
         )
 
@@ -120,6 +137,18 @@ class SQLiteBackend(CleaverBackend):
                 (v, name, i)
             )
 
+    def is_verified_human(self, identity):
+        return self.execute(
+            'SELECT identity FROM h WHERE identity=?',
+            (identity,)
+        ).fetchone() is not None
+
+    def verify_human(self, identity):
+        self.execute(
+            'INSERT OR IGNORE INTO h (identity) VALUES (?)',
+            (identity,)
+        )
+
     def get_variant(self, identity, experiment_name):
         """
         Retrieve the variant for a specific user and experiment (if it exists).
@@ -135,10 +164,9 @@ class SQLiteBackend(CleaverBackend):
         ).fetchone()
         return row['variant'] if row else None
 
-    def participate(self, identity, experiment_name, variant):
+    def set_variant(self, identity, experiment_name, variant):
         """
-        Set the variant for a specific user and mark a participation for the
-        experiment.
+        Set the variant for a specific user.
 
         :param identity a unique user identifier
         :param experiment_name the string name of the experiment
@@ -149,6 +177,14 @@ class SQLiteBackend(CleaverBackend):
                 'VALUES (?, ?, ?)',
             (identity, experiment_name, variant)
         )
+
+    def mark_participant(self, experiment_name, variant):
+        """
+        Mark a participation for a specific experiment variant.
+
+        :param experiment_name the string name of the experiment
+        :param variant the string name of the variant
+        """
         self.execute(
             'INSERT OR IGNORE INTO p (experiment_name, variant) VALUES (?, ?)',
             (experiment_name, variant)
@@ -159,7 +195,7 @@ class SQLiteBackend(CleaverBackend):
             (experiment_name, variant)
         )
 
-    def score(self, experiment_name, variant):
+    def mark_conversion(self, experiment_name, variant):
         """
         Mark a conversion for a specific experiment variant.
 

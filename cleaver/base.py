@@ -6,7 +6,8 @@ from cleaver import util
 
 class Cleaver(object):
 
-    def __init__(self, environ, identity, backend):
+    def __init__(self, environ, identity, backend,
+            require_human_verification=False):
         """
         Create a new Cleaver instance.
 
@@ -21,6 +22,10 @@ class Cleaver(object):
                           ``identity.CleaverIdentityProvider.get_identity``.
         :param backend any implementation of
                           ``backend.CleaverBackend``
+        :param require_human_verification When False, every request (including
+                                          those originating from bots and web
+                                          crawlers) is treated as a unique
+                                          visit (defaults to False).
         """
 
         if not isinstance(identity, CleaverIdentityProvider) and \
@@ -36,6 +41,7 @@ class Cleaver(object):
         self._identity = identity
         self._backend = backend
         self._environ = environ
+        self.require_human_verification = require_human_verification
 
     @property
     def identity(self):
@@ -45,6 +51,10 @@ class Cleaver(object):
         if hasattr(self._identity, 'get_identity'):
             return self._identity.get_identity(self._environ)
         return self._identity(self._environ)
+
+    @property
+    def human(self):
+        return self._backend.is_verified_human(self.identity)
 
     def split(self, experiment_name, *variants):
         """
@@ -87,6 +97,11 @@ class Cleaver(object):
         # Record the experiment if it doesn't exist already
         experiment = b.get_experiment(experiment_name, keys)
 
+        # If the current visitor hasn't been verified as a human, and we've not
+        # required human verification, go ahead and mark them as a human.
+        if self.require_human_verification is False and self.human is False:
+            b.verify_human(self.identity)
+
         if experiment is None:
             b.save_experiment(experiment_name, keys)
             experiment = b.get_experiment(experiment_name, keys)
@@ -117,10 +132,11 @@ class Cleaver(object):
 
         :param experiment_name the string name of the experiment
         """
-        self._backend.score(
-            experiment_name,
-            self._backend.get_variant(self.identity, experiment_name)
-        )
+        if self._backend.get_variant(self.identity, experiment_name):
+            self._backend.mark_conversion(
+                experiment_name,
+                self._backend.get_variant(self.identity, experiment_name)
+            )
 
     def _parse_variants(self, variants):
         if not len(variants):

@@ -151,16 +151,16 @@ class TestSplit(TestCase):
 
         assert cleaver.split('show_promo') == False
 
-    @patch.object(FakeBackend, 'score')
+    @patch.object(FakeBackend, 'mark_conversion')
     @patch.object(FakeBackend, 'get_variant')
     @patch.object(FakeIdentityProvider, 'get_identity')
-    def test_score(self, get_identity, get_variant, score):
+    def test_score(self, get_identity, get_variant, mark_conversion):
         cleaver = Cleaver({}, FakeIdentityProvider(), FakeBackend())
         get_variant.return_value = 'red'
         get_identity.return_value = 'ABC123'
 
         cleaver.score('primary_color')
-        score.assert_called_with('primary_color', 'red')
+        mark_conversion.assert_called_with('primary_color', 'red')
 
 
 class TestVariants(TestCase):

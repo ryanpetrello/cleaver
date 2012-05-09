@@ -19,13 +19,22 @@ class FakeBackend(CleaverBackend):
     def save_experiment(self, name, variants):
         pass  # pragma: nocover
 
+    def is_verified_human(self, identity):
+        return  # pragma: nocover
+
+    def verify_human(self, identity):
+        return  # pragma: nocover
+
     def get_variant(self, identity, experiment_name):
         pass  # pragma: nocover
 
-    def participate(self, identity, experiment_name, variant):
+    def set_variant(self, identity, experiment_name, variant):
         pass  # pragma: nocover
 
-    def score(self, experiment_name, variant):
+    def mark_participant(self, experiment_name, variant):
+        pass  # pragma: nocover
+
+    def mark_conversion(self, experiment_name, variant):
         pass  # pragma: nocover
 
     def participants(self, experiment_name, variant):

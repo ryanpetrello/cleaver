@@ -1,6 +1,8 @@
 from unittest import TestCase
 from datetime import datetime
 
+from mock import Mock, patch
+
 from cleaver import Cleaver
 from cleaver.experiment import Experiment
 from cleaver.tests import FakeIdentityProvider
@@ -77,7 +79,23 @@ class TestSQLite(TestCase):
         assert a[1].started_on.date() == datetime.utcnow().date()
         assert a[1].variants == ('True', 'False')
 
-    def test_participate(self):
+    def test_unverified_participate(self):
+        b = self.b
+        b.save_experiment('text_size', ('small', 'medium', 'large'))
+        b.participate('ryan', 'text_size', 'medium')
+
+        people = b.execute('SELECT * FROM i').fetchall()
+        assert len(people) == 1
+
+        assert people[0]['identity'] == 'ryan'
+        assert people[0]['experiment_name'] == 'text_size'
+        assert people[0]['variant'] == 'medium'
+
+        participations = b.execute("SELECT * FROM p").fetchall()
+        assert len(participations) == 0
+
+    @patch.object(SQLiteBackend, 'is_verified_human', Mock(return_value=True))
+    def test_verified_participate(self):
         b = self.b
         b.save_experiment('text_size', ('small', 'medium', 'large'))
         b.participate('ryan', 'text_size', 'medium')
@@ -96,7 +114,25 @@ class TestSQLite(TestCase):
         assert participations[0]['variant'] == 'medium'
         assert participations[0]['total'] == 1
 
-    def test_participate_multiple(self):
+    def test_unverified_participate_multiple(self):
+        b = self.b
+        b.save_experiment('text_size', ('small', 'medium', 'large'))
+        b.participate('ryan', 'text_size', 'medium')
+        b.participate('ryan', 'text_size', 'medium')
+        b.participate('ryan', 'text_size', 'medium')
+
+        people = b.execute('SELECT * FROM i').fetchall()
+        assert len(people) == 1
+
+        assert people[0]['identity'] == 'ryan'
+        assert people[0]['experiment_name'] == 'text_size'
+        assert people[0]['variant'] == 'medium'
+
+        participations = b.execute("SELECT * FROM p").fetchall()
+        assert len(participations) == 0
+
+    @patch.object(SQLiteBackend, 'is_verified_human', Mock(return_value=True))
+    def test_verified_participate_multiple(self):
         b = self.b
         b.save_experiment('text_size', ('small', 'medium', 'large'))
         b.participate('ryan', 'text_size', 'medium')
@@ -127,7 +163,7 @@ class TestSQLite(TestCase):
 
     def test_score(self):
         b = self.b
-        b.score('text_size', 'medium')
+        b.mark_conversion('text_size', 'medium')
 
         conversions = b.execute('SELECT * FROM c').fetchall()
         assert len(conversions) == 1
@@ -138,9 +174,9 @@ class TestSQLite(TestCase):
 
     def test_score_multiple(self):
         b = self.b
-        b.score('text_size', 'medium')
-        b.score('text_size', 'large')
-        b.score('text_size', 'medium')
+        b.mark_conversion('text_size', 'medium')
+        b.mark_conversion('text_size', 'large')
+        b.mark_conversion('text_size', 'medium')
 
         conversions = b.execute('SELECT * FROM c').fetchall()
         assert len(conversions) == 2
@@ -153,7 +189,21 @@ class TestSQLite(TestCase):
         assert conversions[1]['variant'] == 'large'
         assert conversions[1]['total'] == 1
 
-    def test_participants(self):
+    def test_unverified_participants(self):
+        b = self.b
+        b.participate('ryan', 'text_color', 'small')
+        b.participate('joe', 'text_color', 'medium')
+        b.participate('joe', 'show_promo', 'True')
+
+        assert b.participants('text_color', 'small') == 0
+        assert b.participants('text_color', 'medium') == 0
+        assert b.participants('text_color', 'large') == 0
+
+        assert b.participants('show_promo', 'True') == 0
+        assert b.participants('show_promo', 'False') == 0
+
+    @patch.object(SQLiteBackend, 'is_verified_human', Mock(return_value=True))
+    def test_verified_participants(self):
         b = self.b
         b.participate('ryan', 'text_color', 'small')
         b.participate('joe', 'text_color', 'medium')
@@ -168,9 +218,9 @@ class TestSQLite(TestCase):
 
     def test_conversions(self):
         b = self.b
-        b.score('text_color', 'small')
-        b.score('text_color', 'medium')
-        b.score('show_promo', 'True')
+        b.mark_conversion('text_color', 'small')
+        b.mark_conversion('text_color', 'medium')
+        b.mark_conversion('show_promo', 'True')
 
         assert b.conversions('text_color', 'small') == 1
         assert b.conversions('text_color', 'medium') == 1
