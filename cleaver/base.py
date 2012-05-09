@@ -1,8 +1,7 @@
-from itertools import izip_longest
-
+from .compat import zip_longest, string_types
 from .backend import CleaverBackend
 from .identity import CleaverIdentityProvider
-import util
+from cleaver import util
 
 
 class Cleaver(object):
@@ -68,9 +67,9 @@ class Cleaver(object):
             >>> split('text_color', ('red', '#F00', 2), ('blue', '#00F', 4))
         """
         # Perform some minimal type checking
-        if not isinstance(experiment_name, basestring):
+        if not isinstance(experiment_name, string_types):
             raise RuntimeError(
-                'Invalid experiment name: %s must be a basestring.' % \
+                'Invalid experiment name: %s must be a string.' % \
                     experiment_name
             )
 
@@ -94,7 +93,7 @@ class Cleaver(object):
         variant = b.get_variant(self.identity, experiment.name)
         if variant is None:
             # ...or choose (and store) one randomly if it doesn't exist yet...
-            variant = util.random_variant(keys, weights).next()
+            variant = next(util.random_variant(keys, weights))
             b.participate(self.identity, experiment.name, variant)
 
         return dict(zip(keys, values))[variant]
@@ -123,9 +122,9 @@ class Cleaver(object):
                 )
 
             # Perform some minimal type checking
-            if not isinstance(v[0], basestring):
+            if not isinstance(v[0], string_types):
                 raise RuntimeError(
-                    'Invalid variant name: %s must be a basestring.' % \
+                    'Invalid variant name: %s must be a string.' % \
                         v[0]
                 )
             if not isinstance(v[2], int):
@@ -141,4 +140,4 @@ class Cleaver(object):
             variants
         )
 
-        return izip_longest(*variants)
+        return zip_longest(*variants)

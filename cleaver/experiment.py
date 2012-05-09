@@ -1,5 +1,7 @@
 import math
 
+from .compat import string_types
+
 
 def memoize(function):
     cache = {}
@@ -110,7 +112,7 @@ class VariantStat(object):
     @property
     def confidence_level(self):
         z = self.z_score
-        if isinstance(z, basestring):
+        if isinstance(z, string_types):
             return z
 
         z = abs(round(z, 3))

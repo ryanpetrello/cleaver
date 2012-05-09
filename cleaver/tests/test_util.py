@@ -12,8 +12,8 @@ class TestRandomVariant(TestCase):
         results = {}
         total = 50000
 
-        for _ in xrange(total):
-            v = random_variant(items, weights).next()
+        for _ in range(total):
+            v = next(random_variant(items, weights))
             results.setdefault(v, 0)
             results[v] += 1
 
@@ -28,8 +28,8 @@ class TestRandomVariant(TestCase):
         results = {}
         total = 50000
 
-        for _ in xrange(total):
-            v = random_variant(items, weights).next()
+        for _ in range(total):
+            v = next(random_variant(items, weights))
             results.setdefault(v, 0)
             results[v] += 1
 
@@ -49,7 +49,7 @@ class TestRandomVariant(TestCase):
 
         # Choose a random variant from 1K variants, each with a weight of 1M...
         elapsed = timeit.Timer(
-            "random_variant(range(10000), repeat(1000000, 1000)).next()",
+            "next(random_variant(range(10000), repeat(1000000, 1000)))",
             "".join([
                 "from cleaver.util import random_variant; "
                 "from itertools import repeat"

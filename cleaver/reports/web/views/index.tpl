@@ -140,7 +140,7 @@
                             % else:
                                 <td class="left"><b>Variant</b></td>
                                 <td class="left">
-                                    <span class="pill" style="background:{{colors.next()}};">
+                                    <span class="pill" style="background:{{next(colors)}};">
                                         {{ALPHA[i-1].upper()}}
                                     </span>
                                 </td>

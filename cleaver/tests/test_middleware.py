@@ -2,7 +2,7 @@ from unittest import TestCase
 import inspect
 
 from . import FakeIdentityProvider, FakeBackend
-from cleaver import Cleaver, SplitMiddleware
+from cleaver import SplitMiddleware
 
 
 class TestMiddleware(TestCase):
@@ -50,11 +50,9 @@ class TestMiddleware(TestCase):
         environ = self._make_request()
         assert 'cleaver' in environ
         assert inspect.ismethod(environ['cleaver'])
-        assert environ['cleaver'].im_class is Cleaver
 
     def test_custom_environ_key(self):
         environ = self._make_request(environ_key='xyz')
         assert 'cleaver' not in environ
         assert 'xyz' in environ
         assert inspect.ismethod(environ['xyz'])
-        assert environ['xyz'].im_class is Cleaver
