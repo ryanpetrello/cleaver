@@ -170,6 +170,7 @@ class TestSplit(TestCase):
 
     @patch.object(FakeBackend, 'mark_conversion')
     @patch.object(FakeBackend, 'get_variant')
+    @patch.object(FakeBackend, 'is_verified_human', lambda *args: True)
     @patch.object(FakeIdentityProvider, 'get_identity')
     def test_score(self, get_identity, get_variant, mark_conversion):
         cleaver = Cleaver({}, FakeIdentityProvider(), FakeBackend())

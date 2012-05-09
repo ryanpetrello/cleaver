@@ -23,7 +23,7 @@ segmenting visitors:
     cleaver = request.environ['cleaver']
     
     # Start a new A/B experiment, returning True or False
-    show_promo = cleaver.split('show_promo')
+    show_promo = cleaver('show_promo')
     
     # ...later, when the user completes the experiment, score the conversion...
     cleaver.score('show_promo')
@@ -35,7 +35,7 @@ Cleaver can also be used to specify an arbitrary number of variants:
     cleaver = request.environ['cleaver']
     
     # Start a new A/B experiment, returning one of several options
-    background_color = cleaver.split(
+    background_color = cleaver(
         'background_color',
         ('Red', '#F00'),
         ('Green', '#0F0'),
@@ -50,7 +50,7 @@ argument to each variant.
     
     cleaver = request.environ['cleaver']
     
-    background_color = cleaver.split(
+    background_color = cleaver(
         'show_new_experimental_feature',
         ('True', True, 1),
         ('False', False, 9)

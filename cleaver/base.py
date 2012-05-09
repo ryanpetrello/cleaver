@@ -43,6 +43,9 @@ class Cleaver(object):
         self._environ = environ
         self.require_human_verification = require_human_verification
 
+    def __call__(self, *args):
+        return self.split(*args)
+
     @property
     def identity(self):
         """
@@ -130,9 +133,14 @@ class Cleaver(object):
 
         "Suzy, who was shown the large button just signed up."
 
+        Conversions will *only* be marked for visitors who have been verified
+        as humans (to avoid skewing reports with requests from bots and web
+        crawlers).
+
         :param experiment_name the string name of the experiment
         """
-        if self._backend.get_variant(self.identity, experiment_name):
+        if self._backend.get_variant(self.identity, experiment_name) and \
+                self.human is True:
             self._backend.mark_conversion(
                 experiment_name,
                 self._backend.get_variant(self.identity, experiment_name)

@@ -1,9 +1,8 @@
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
-import inspect
 
 from . import FakeIdentityProvider, FakeBackend
-from cleaver import SplitMiddleware
+from cleaver import Cleaver, SplitMiddleware
 from cleaver.compat import urlencode
 
 
@@ -22,8 +21,7 @@ class TestMiddleware(TestCase):
         setup_testing_defaults(environ)
 
         def start_response(status, response_headers, exc_info=None):
-            self._status = status
-            self._response_headers = response_headers
+            pass
 
         SplitMiddleware(self.app, FakeIdentityProvider(), FakeBackend(), **kw)(
             environ,
@@ -52,13 +50,15 @@ class TestMiddleware(TestCase):
     def test_cleaver_in_environ(self):
         environ = self._make_request()
         assert 'cleaver' in environ
-        assert inspect.ismethod(environ['cleaver'])
+        assert isinstance(environ['cleaver'], Cleaver)
+        assert callable(environ['cleaver'])
 
     def test_custom_environ_key(self):
         environ = self._make_request(environ_key='xyz')
         assert 'cleaver' not in environ
         assert 'xyz' in environ
-        assert inspect.ismethod(environ['xyz'])
+        assert isinstance(environ['xyz'], Cleaver)
+        assert callable(environ['xyz'])
 
     def test_cleaver_override_disabled(self):
         environ = self._make_request({

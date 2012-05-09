@@ -56,7 +56,7 @@ class SplitMiddleware(object):
             self._identity,
             self._backend,
             require_human_verification=self.require_human_verification
-        ).split
+        )
 
         if self.allow_override:
             self._handle_variant_overrides(environ)
