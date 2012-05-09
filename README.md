@@ -78,8 +78,8 @@ any WSGI application with ``cleaver.SplitMiddleware``.  For example:
 
     wsgi_app = SplitMiddleware(
         simple_app,
-        lambda environ: environ.get('current_user_id', 'anonymous'),
-        SQLiteBackend(':memory:')
+        lambda environ: environ['REMOTE_ADDR'],  # Track by IP for examples' sake
+        SQLiteBackend('./experiment.data')
     )
 
 ``cleaver.SplitMiddleware`` requires an identity and backend adaptor (for
@@ -91,9 +91,20 @@ is easy too - just have a look at the full documentation <link>.
 
 ## Analyzing Results
 
-Bacon ipsum dolor sit amet meatball rump t-bone beef ribs, turducken speck
-shoulder. Corned beef prosciutto pig, rump tenderloin spare ribs salami sausage
-turducken pork loin t-bone chuck kielbasa strip steak.
+Cleaver comes with a simple WSGI reporting application which can be used to
+gain insight into experiment results:
+
+    from cleaver.reports.web import CleaverWebUI
+    from cleaver.backend.sqlite import SQLiteBackend
+    
+    wsgi_app = CleaverWebUI(
+        SQLiteBackend('./experiment.data')
+    )
+    
+    from wsgiref import simple_server
+    simple_server.make_server('', 8000, wsgi_app).serve_forever()
+
+<img src="http://i.imgur.com/uvM0y.png" />
 
 ## Development
 Source hosted at [GitHub](https://github.com/ryanpetrello/cleaver). Report
