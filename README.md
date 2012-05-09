@@ -111,7 +111,7 @@ gain insight into experiment results:
 ## Development
 
 Source hosted at [GitHub](https://github.com/ryanpetrello/cleaver). Report
-Issues and Feature Requests on [GitHub
+issues and feature requests on [GitHub
 Issues](https://github.com/ryanpetrello/cleaver/issues).
 
 Tests can be run with ``python setup.py test`` or ``tox``.
