@@ -104,7 +104,7 @@ gain insight into experiment results:
     from wsgiref import simple_server
     simple_server.make_server('', 8000, wsgi_app).serve_forever()
 
-<img src="http://i.imgur.com/uvM0y.png" />
+<img src="http://imgur.com/y1SUf.png" />
 
 ## Development
 Source hosted at [GitHub](https://github.com/ryanpetrello/cleaver). Report
