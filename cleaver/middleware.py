@@ -7,7 +7,7 @@ from .identity import CleaverIdentityProvider
 class SplitMiddleware(object):
 
     def __init__(self, app, identity, backend, environ_key='cleaver',
-            allow_override=False):
+            allow_override=False, require_human_verification=False):
         """
         Makes a Cleaver instance available every request under
         ``environ['cleaver']``.
@@ -26,6 +26,10 @@ class SplitMiddleware(object):
                               http://mypythonapp.com?cleaver:button_size=small
 
                               Especially useful for tests and QA.
+        :param require_human_verification When False, every request (including
+                                          those originating from bots and web
+                                          crawlers) is treated as a unique
+                                          visit (defaults to False).
         """
         self.app = app
 
@@ -44,12 +48,14 @@ class SplitMiddleware(object):
         self._backend = backend
         self.environ_key = environ_key
         self.allow_override = allow_override
+        self.require_human_verification = require_human_verification
 
     def __call__(self, environ, start_response):
         environ[self.environ_key] = Cleaver(
             environ,
             self._identity,
-            self._backend
+            self._backend,
+            require_human_verification=self.require_human_verification
         ).split
 
         if self.allow_override:

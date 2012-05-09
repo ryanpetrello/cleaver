@@ -62,7 +62,7 @@ class CleaverBackend(object):
         return  # pragma: nocover
 
     @abc.abstractmethod
-    def verify_human(self, identity):
+    def mark_human(self, identity):
         return  # pragma: nocover
 
     @abc.abstractmethod

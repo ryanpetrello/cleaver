@@ -79,6 +79,21 @@ class TestSQLite(TestCase):
         assert a[1].started_on.date() == datetime.utcnow().date()
         assert a[1].variants == ('True', 'False')
 
+    def test_is_verified_human(self):
+        b = self.b
+        b.execute(
+            'INSERT INTO h (identity) VALUES (?)', ('ryan',)
+        )
+        assert b.is_verified_human('ryan') == True
+        assert b.is_verified_human('googlebot') == False
+
+    def test_mark_human(self):
+        b = self.b
+        b.mark_human('ryan')
+        assert len(b.execute(
+            'SELECT identity FROM h WHERE identity=?', ('ryan',)
+        ).fetchall()) == 1
+
     def test_unverified_participate(self):
         b = self.b
         b.save_experiment('text_size', ('small', 'medium', 'large'))

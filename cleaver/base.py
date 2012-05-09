@@ -99,8 +99,8 @@ class Cleaver(object):
 
         # If the current visitor hasn't been verified as a human, and we've not
         # required human verification, go ahead and mark them as a human.
-        if self.require_human_verification is False and self.human is False:
-            b.verify_human(self.identity)
+        if self.require_human_verification is False and self.human is not True:
+            b.mark_human(self.identity)
 
         if experiment is None:
             b.save_experiment(experiment_name, keys)

@@ -22,7 +22,7 @@ class FakeBackend(CleaverBackend):
     def is_verified_human(self, identity):
         return  # pragma: nocover
 
-    def verify_human(self, identity):
+    def mark_human(self, identity):
         return  # pragma: nocover
 
     def get_variant(self, identity, experiment_name):

@@ -143,7 +143,7 @@ class SQLiteBackend(CleaverBackend):
             (identity,)
         ).fetchone() is not None
 
-    def verify_human(self, identity):
+    def mark_human(self, identity):
         self.execute(
             'INSERT OR IGNORE INTO h (identity) VALUES (?)',
             (identity,)

@@ -126,6 +126,23 @@ class TestSplit(TestCase):
         assert cleaver.split('show_promo') in (True, False)
         get_experiment.assert_called_with('show_promo', ('True', 'False'))
 
+    @patch.object(FakeBackend, 'get_experiment')
+    @patch.object(FakeBackend, 'mark_human')
+    @patch.object(Cleaver, 'identity', 'ABC123')
+    @patch.object(Cleaver, 'human', False)
+    def test_default_human_verification(self, mark_human, get_experiment):
+        backend = FakeBackend()
+        get_experiment.return_value = Experiment(
+            backend=backend,
+            name='show_promo',
+            started_on=datetime.utcnow(),
+            variants=['True', 'False']
+        )
+        cleaver = Cleaver({}, FakeIdentityProvider(), backend)
+
+        assert cleaver.split('show_promo') in (True, False)
+        mark_human.assert_called_with('ABC123')
+
     @patch('cleaver.util.random_variant')
     @patch.object(FakeBackend, 'get_experiment')
     @patch.object(FakeBackend, 'participate')
