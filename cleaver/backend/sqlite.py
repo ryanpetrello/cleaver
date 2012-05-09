@@ -26,7 +26,7 @@ class SQLiteBackend(CleaverBackend):
         )
         self.execute(
             "CREATE TABLE IF NOT EXISTS v " \
-                "(name TEXT PRIMARY KEY, experiment_name TEXT)"
+                "(name TEXT PRIMARY KEY, experiment_name TEXT, _ord INTEGER)"
         )
         self.execute(
             "CREATE TABLE IF NOT EXISTS i (" \
@@ -68,7 +68,7 @@ class SQLiteBackend(CleaverBackend):
             variants=tuple(
                 v['name']
                 for v in self.execute(
-                    "SELECT * FROM v WHERE experiment_name = ?",
+                    "SELECT * FROM v WHERE experiment_name = ? ORDER BY _ord",
                     (row['name'],)
                 )
             )
@@ -114,10 +114,10 @@ class SQLiteBackend(CleaverBackend):
             name,
             datetime.utcnow()
         ))
-        for v in variants:
+        for i, v in enumerate(variants):
             self.execute(
-                'INSERT INTO v (name, experiment_name) VALUES (?, ?)',
-                (v, name)
+                'INSERT INTO v (name, experiment_name, _ord) VALUES (?, ?, ?)',
+                (v, name, i)
             )
 
     def get_variant(self, identity, experiment_name):
