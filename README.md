@@ -111,6 +111,34 @@ called `small`, `medium`, and `large`, a url in the format:
 ..will always display small buttons. This data won't, however, be stored in
 your session or count towards reporting.
 
+### Blocking Robots
+
+By default, Cleaver does not differentiate between robots (such as
+[Googlebot](http://en.wikipedia.org/wiki/Googlebot)) and living, breathing,
+browser-driving humans.
+
+This can cause participants well in excess of the number of actual humans who
+come to your site (if your A/B tests are publicly visible), and since bots
+don't generally convert, can result in skewed conversion metrics.
+
+To combat this, Cleaver can be configured to defer counting of visitors as
+participants until after they've proven they're probably not a bot:
+
+    wsgi_app = SplitMiddleware(
+        simple_app,
+        ...
+        count_humans_only=True
+    )
+
+...and then, on every page that presents an A/B decision, add the following
+call directly prior to the closing ``</body>`` tag (adapted to your templating
+language of choice):
+
+    ...
+            {{request.environ['cleaver'].humanizing_javascript()}}
+        </body>
+    </html>
+
 ## Analyzing Results
 
 Cleaver comes with a lightweight WSGI front end which can be used to see how

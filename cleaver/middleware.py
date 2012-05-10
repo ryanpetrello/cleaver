@@ -7,7 +7,7 @@ from .identity import CleaverIdentityProvider
 class SplitMiddleware(object):
 
     def __init__(self, app, identity, backend, environ_key='cleaver',
-            allow_override=False, require_human_verification=False,
+            allow_override=False, count_humans_only=False,
             human_callback_token='__cleaver_human_verification__'):
         """
         Makes a Cleaver instance available every request under
@@ -27,14 +27,12 @@ class SplitMiddleware(object):
                               http://mypythonapp.com?cleaver:button_size=small
 
                               Especially useful for tests and QA.
-        :param require_human_verification when False, every request (including
-                                          those originating from bots and web
-                                          crawlers) is treated as a unique
-                                          visit (defaults to False).
-        :param human_callback_token when ``require_human_verification`` is
-                                         True, this token in the URL will
-                                         trigger a simple verification process
-                                         for humans.
+        :param count_humans_only when False, every request (including those
+                                 originating from bots and web crawlers) is
+                                 treated as a unique visit (defaults to False).
+        :param human_callback_token when ``count_humans_only`` is True, this
+                                    token in the URL will trigger a simple
+                                    verification process for humans.
         """
         self.app = app
 
@@ -53,7 +51,7 @@ class SplitMiddleware(object):
         self._backend = backend
         self.environ_key = environ_key
         self.allow_override = allow_override
-        self.require_human_verification = require_human_verification
+        self.count_humans_only = count_humans_only
         self.human_callback_token = human_callback_token
 
     def __call__(self, environ, start_response):
@@ -61,7 +59,7 @@ class SplitMiddleware(object):
             environ,
             self._identity,
             self._backend,
-            require_human_verification=self.require_human_verification
+            count_humans_only=self.count_humans_only
         )
         environ[self.environ_key] = cleaver
 
@@ -73,14 +71,16 @@ class SplitMiddleware(object):
         # a valid AJAX callback (which bots aren't generally capable of), then
         # mark the visitor as human.
         #
-        if self.require_human_verification and \
-            environ.get('METHOD', '') == 'POST' and \
+        if self.count_humans_only and \
+            environ.get('REQUEST_METHOD', '') == 'POST' and \
             self.human_callback_token in environ.get('PATH_INFO', ''):
 
-            qs = parse_qs(environ.get('QUERY_STRING', ''))
-            x = qs.get('x')
-            y = qs.get('y')
-            z = qs.get('z')
+            length = int(environ.get('CONTENT_LENGTH', '0'))
+            qs = parse_qs(environ['wsgi.input'].read(length))
+
+            x = qs.get('x')[0]
+            y = qs.get('y')[0]
+            z = qs.get('z')[0]
             try:
                 # The AJAX call will include three POST arguments, X, Y, and Z
                 #
@@ -91,6 +91,7 @@ class SplitMiddleware(object):
                 if x and y and z and int(x) + int(y) == int(z):
                     # Mark the visitor as a human
                     self._backend.mark_human(cleaver.identity)
+
                     # If the visitor has been assigned any experiment variants,
                     # tally their participation.
                     for e in self._backend.all_experiments():
@@ -100,8 +101,20 @@ class SplitMiddleware(object):
                         )
                         if variant:
                             self._backend.mark_participant(e.name, variant)
+
+                    start_response(
+                        '204 No Content',
+                        [('Content-Type', 'text/plain')]
+                    )
+                    return []
             except ValueError:
                 pass
+
+            start_response(
+                '401 Unauthorized',
+                [('Content-Type', 'text/plain')]
+            )
+            return []
 
         return self.app(environ, start_response)
 

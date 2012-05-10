@@ -106,7 +106,7 @@ class TestFullStack(TestCase):
                 app,
                 lambda environ: 'ryan',
                 backend,
-                require_human_verification=True
+                count_humans_only=True
             )
 
             # The first request returns a variant and stores it

@@ -7,7 +7,8 @@ from cleaver import util
 class Cleaver(object):
 
     def __init__(self, environ, identity, backend,
-            require_human_verification=False):
+            count_humans_only=False,
+            human_callback_token='__cleaver_human_verification__'):
         """
         Create a new Cleaver instance.
 
@@ -22,10 +23,12 @@ class Cleaver(object):
                           ``identity.CleaverIdentityProvider.get_identity``.
         :param backend any implementation of
                           ``backend.CleaverBackend``
-        :param require_human_verification When False, every request (including
-                                          those originating from bots and web
-                                          crawlers) is treated as a unique
-                                          visit (defaults to False).
+        :param count_humans_only when False, every request (including those
+                                 originating from bots and web crawlers) is
+                                 treated as a unique visit (defaults to False).
+        :param human_callback_token when ``count_humans_only`` is True, this
+                                    token in the URL will trigger a simple
+                                    verification process for humans.
         """
 
         if not isinstance(identity, CleaverIdentityProvider) and \
@@ -41,7 +44,8 @@ class Cleaver(object):
         self._identity = identity
         self._backend = backend
         self._environ = environ
-        self.require_human_verification = require_human_verification
+        self.count_humans_only = count_humans_only
+        self.human_callback_token = human_callback_token
 
     def __call__(self, *args):
         return self.split(*args)
@@ -102,7 +106,7 @@ class Cleaver(object):
 
         # If the current visitor hasn't been verified as a human, and we've not
         # required human verification, go ahead and mark them as a human.
-        if self.require_human_verification is False and self.human is not True:
+        if self.count_humans_only is False and self.human is not True:
             b.mark_human(self.identity)
 
         if experiment is None:
@@ -184,3 +188,27 @@ class Cleaver(object):
         )
 
         return zip_longest(*variants)
+
+    def humanizing_javascript(self):
+        if self.human:
+            return ''
+        return """
+            <script type="text/javascript">
+               var x = Math.floor(Math.random()*100);
+               var y = Math.floor(Math.random()*100);
+
+               var url = "%s";
+               var params = "x="+x+"&y="+y+"&z="+(x+y);
+
+               var h;
+               if (window.XMLHttpRequest){
+                   h = new XMLHttpRequest();
+               } else {
+                   h = new ActiveXObject("Microsoft.XMLHTTP");
+               }
+               h.open("POST", url, true);
+               h.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+               h.setRequestHeader("Connection", "close");
+               h.send(params);
+            </script>
+        """ % self.human_callback_token
