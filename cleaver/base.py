@@ -135,7 +135,7 @@ class Cleaver(object):
         """
         Used to mark the current user's experiment variant as "converted" e.g.,
 
-        "Suzy, who was shown the large button just signed up."
+        "Suzy, who was shown the large button, just signed up."
 
         Conversions will *only* be marked for visitors who have been verified
         as humans (to avoid skewing reports with requests from bots and web
@@ -207,8 +207,8 @@ class Cleaver(object):
                    h = new ActiveXObject("Microsoft.XMLHTTP");
                }
                h.open("POST", url, true);
-               h.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+               h.setRequestHeader("Content-Type", "%s");
                h.setRequestHeader("Connection", "close");
                h.send(params);
             </script>
-        """ % self.human_callback_token
+        """ % (self.human_callback_token, "application/x-www-form-urlencoded")
