@@ -76,12 +76,13 @@ class SplitMiddleware(object):
             self.human_callback_token in environ.get('PATH_INFO', ''):
 
             length = int(environ.get('CONTENT_LENGTH', '0'))
-            qs = parse_qs(environ['wsgi.input'].read(length))
+            qs = parse_qs(environ['wsgi.input'].read(length).decode())
 
-            x = qs.get('x')[0]
-            y = qs.get('y')[0]
-            z = qs.get('z')[0]
             try:
+                x = qs['x'][0]
+                y = qs['y'][0]
+                z = qs['z'][0]
+
                 # The AJAX call will include three POST arguments, X, Y, and Z
                 #
                 # Part of the "not a robot test" is validating that X + Y = Z
@@ -107,7 +108,7 @@ class SplitMiddleware(object):
                         [('Content-Type', 'text/plain')]
                     )
                     return []
-            except ValueError:
+            except (KeyError, ValueError):
                 pass
 
             start_response(

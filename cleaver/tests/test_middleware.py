@@ -1,12 +1,17 @@
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
 
+from mock import Mock, patch, call
+
 from . import FakeIdentityProvider, FakeBackend
 from cleaver import Cleaver, SplitMiddleware
-from cleaver.compat import urlencode
+from cleaver.compat import urlencode, PY3
 
 
 class TestMiddleware(TestCase):
+
+    def setUp(self):
+        self._resp = {}
 
     @property
     def app(self):
@@ -16,14 +21,22 @@ class TestMiddleware(TestCase):
             return ['Hello world!\n']
         return a
 
-    def _make_request(self, environ=None, **kw):
+    def _make_request(self, environ=None, postdata=None, **kw):
         environ = environ or {}
         setup_testing_defaults(environ)
 
-        def start_response(status, response_headers, exc_info=None):
-            pass
+        if postdata is not None:
+            environ['REQUEST_METHOD'] = 'POST'
+            if PY3:
+                postdata = bytes(postdata, 'UTF-8')  # pragma: nocover
+            environ['CONTENT_LENGTH'] = str(len(postdata))
+            environ['wsgi.input'].write(postdata)
+            environ['wsgi.input'].seek(0)
 
-        SplitMiddleware(self.app, FakeIdentityProvider(), FakeBackend(), **kw)(
+        def start_response(status, response_headers, exc_info=None):
+            self._resp['status'] = status
+
+        SplitMiddleware(self.app, lambda environ: 'ryan', FakeBackend(), **kw)(
             environ,
             start_response
         )
@@ -124,3 +137,75 @@ class TestMiddleware(TestCase):
             'show_promo': 'False',
             'Button Size': 'large'
         }
+
+    @patch.object(FakeBackend, 'mark_human')
+    @patch.object(FakeBackend, 'all_experiments', lambda *args: [])
+    def test_human_callback(self, mark_human):
+        self._make_request({
+            'PATH_INFO': '/__cleaver_human_verification__'
+        }, postdata='x=1&y=2&z=3', count_humans_only=True)
+        assert self._resp['status'] == '204 No Content'
+
+        mark_human.assert_called_with('ryan')
+
+    @patch.object(FakeBackend, 'mark_human')
+    @patch.object(FakeBackend, 'mark_participant')
+    @patch.object(FakeBackend, 'get_variant')
+    @patch.object(FakeBackend, 'all_experiments')
+    def test_callback_with_new_participants(self, all_experiments,
+        get_variant, mark_participant, mark_human):
+
+        first = Mock()
+        first.name = 'show_promo'
+        second = Mock()
+        second.name = 'color'
+        all_experiments.return_value = [
+            first, second
+        ]
+
+        get_variant.side_effect = ['True', 'blue']
+
+        self._make_request({
+            'PATH_INFO': '/__cleaver_human_verification__'
+        }, postdata='x=1&y=2&z=3', count_humans_only=True)
+        assert self._resp['status'] == '204 No Content'
+
+        mark_human.assert_called_with('ryan')
+        get_variant.assert_has_calls([
+            call('ryan', 'show_promo'),
+            call('ryan', 'color'),
+        ])
+        mark_participant.assert_has_calls([
+            call('show_promo', 'True'),
+            call('color', 'blue'),
+        ])
+
+    def test_missing_input(self):
+        self._make_request({
+            'PATH_INFO': '/__cleaver_human_verification__'
+        }, postdata='', count_humans_only=True)
+        assert self._resp['status'] == '401 Unauthorized'
+
+    def test_deformed_input(self):
+        self._make_request({
+            'PATH_INFO': '/__cleaver_human_verification__'
+        }, postdata='rtoanrt98arst0larst', count_humans_only=True)
+        assert self._resp['status'] == '401 Unauthorized'
+
+    def test_missing_arguments(self):
+        self._make_request({
+            'PATH_INFO': '/__cleaver_human_verification__'
+        }, postdata='x=5', count_humans_only=True)
+        assert self._resp['status'] == '401 Unauthorized'
+
+    def test_non_integer_arguments(self):
+        self._make_request({
+            'PATH_INFO': '/__cleaver_human_verification__'
+        }, postdata='x=5&y=10&z=dog', count_humans_only=True)
+        assert self._resp['status'] == '401 Unauthorized'
+
+    def test_bad_math(self):
+        self._make_request({
+            'PATH_INFO': '/__cleaver_human_verification__'
+        }, postdata='x=5&y=10&z=250', count_humans_only=True)
+        assert self._resp['status'] == '401 Unauthorized'

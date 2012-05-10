@@ -277,3 +277,16 @@ class TestVariants(TestCase):
             c._parse_variants,
             (('red', '#F00', .5), ('green', '#0F0', 2.5))
         )
+
+
+class TestHumanizingJavascript(TestCase):
+
+    def test_url_check(self):
+        c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
+        assert 'var url = "%s";' % c.human_callback_token in \
+            c.humanizing_javascript()
+
+    @patch.object(Cleaver, 'human', True)
+    def test_already_human(self):
+        c = Cleaver({}, FakeIdentityProvider(), FakeBackend())
+        assert c.humanizing_javascript() == ''
