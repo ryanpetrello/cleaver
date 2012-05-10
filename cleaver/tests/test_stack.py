@@ -5,6 +5,7 @@ from wsgiref.util import setup_testing_defaults
 
 from cleaver import SplitMiddleware
 from cleaver.backend.sqlite import SQLiteBackend
+from cleaver.compat import next
 
 
 class TestFullStack(TestCase):

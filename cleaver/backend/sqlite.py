@@ -71,8 +71,14 @@ class SQLiteBackend(CleaverBackend):
         )
 
     def execute(self, sql, params=()):
-        with self._conn:
-            return self._conn.execute(sql, params)
+        c = self._conn.cursor()
+        try:
+            r = c.execute(sql, params)
+            self._conn.commit()
+            return r
+        except:  # pragma: nocover
+            self._conn.rollback()
+            raise
 
     def close(self):
         self._conn.close()

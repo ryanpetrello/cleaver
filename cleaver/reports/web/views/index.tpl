@@ -1,6 +1,7 @@
 % from string import ascii_lowercase as ALPHA
 % from itertools import cycle
 
+% from cleaver.compat import next
 % from cleaver.experiment import VariantStat
 
 <html>

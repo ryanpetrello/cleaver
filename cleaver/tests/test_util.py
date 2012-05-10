@@ -1,6 +1,7 @@
 from unittest import TestCase
 import timeit
 
+from cleaver.compat import next
 from cleaver.util import random_variant
 
 
@@ -50,9 +51,10 @@ class TestRandomVariant(TestCase):
         # Choose a random variant from 1K variants, each with a weight of 1M...
         elapsed = timeit.Timer(
             "next(random_variant(range(10000), repeat(1000000, 1000)))",
-            "".join([
-                "from cleaver.util import random_variant; "
-                "from itertools import repeat"
+            "\n".join([
+                "from cleaver.util import random_variant",
+                "from cleaver.compat import next",
+                "from itertools import repeat",
             ])
         ).timeit(1)
 

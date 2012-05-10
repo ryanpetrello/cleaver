@@ -1,4 +1,7 @@
-import abc
+try:
+    import abc
+except ImportError:  # pragma: nocover
+    from cleaver.compat import abc  # noqa
 
 
 class CleaverBackend(object):
