@@ -14,4 +14,4 @@ install:
   - pip install pep8
 script: 
   - pep8 --repeat --exclude=bottle.py,abc.py --show-source cleaver setup.py
-  - python setup.py test
+  - python setup.py test -q

@@ -108,8 +108,8 @@ called `small`, `medium`, and `large`, a url in the format:
 
     http://mypythonapp.com?cleaver:button_size=small
 
-..will always display small buttons. This data won't, however, be stored in
-your session or count towards reporting.
+..will always display small buttons. This data won't, however, count towards
+reporting.
 
 ### Blocking Robots
 

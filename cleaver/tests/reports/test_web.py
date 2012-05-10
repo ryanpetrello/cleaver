@@ -51,5 +51,9 @@ class TestWebUI(TestCase):
         def start_response(status, headers):
             result['status'] = status
 
-        app(environ, start_response)
+        resp = app(environ, start_response)
         assert result['status'] == '200 OK'
+
+        if hasattr(resp, 'close'):
+            resp.close()
+            del resp
