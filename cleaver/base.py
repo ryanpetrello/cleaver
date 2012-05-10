@@ -1,13 +1,7 @@
-from .compat import zip_longest, string_types
+from .compat import zip_longest, string_types, next
 from .backend import CleaverBackend
 from .identity import CleaverIdentityProvider
 from cleaver import util
-
-try:
-    next = next
-except NameError:  # pragma: nocover
-    def next(iterator):
-        return iterator.next()  # Fallback for Python 2.5
 
 
 class Cleaver(object):
