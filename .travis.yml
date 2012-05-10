@@ -13,5 +13,5 @@ install:
   - pip install . --use-mirrors
   - pip install pep8
 script: 
-  - pep8 --repeat --exclude=bottle.py --show-source cleaver setup.py
+  - pep8 --repeat --exclude=bottle.py,abc.py --show-source cleaver setup.py
   - python setup.py test
