@@ -8,5 +8,9 @@ env:
 branches:
   only:
     - master
-install: pip install . --use-mirrors
-script: python setup.py test
+install: 
+  - pip install . --use-mirrors
+  - pip install pep8
+script: 
+  - pep8 --repeat --exclude=bottle.py --show-source cleaver setup.py
+  - python setup.py test
