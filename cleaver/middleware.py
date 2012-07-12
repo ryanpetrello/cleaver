@@ -7,8 +7,8 @@ from .identity import CleaverIdentityProvider
 class SplitMiddleware(object):
 
     def __init__(self, app, identity, backend, environ_key='cleaver',
-            allow_override=False, count_humans_only=False,
-            human_callback_token='__cleaver_human_verification__'):
+                 allow_override=False, count_humans_only=False,
+                 human_callback_token='__cleaver_human_verification__'):
         """
         Makes a Cleaver instance available every request under
         ``environ['cleaver']``.
@@ -37,10 +37,10 @@ class SplitMiddleware(object):
         self.app = app
 
         if not isinstance(identity, CleaverIdentityProvider) and \
-            not callable(identity):
+                not callable(identity):
             raise RuntimeError(
-                '%s must be callable or implement ' \
-                    'cleaver.identity.CleaverIdentityProvider' % identity
+                '%s must be callable or implement '
+                'cleaver.identity.CleaverIdentityProvider' % identity
             )
         if not isinstance(backend, CleaverBackend):
             raise RuntimeError(
@@ -72,8 +72,8 @@ class SplitMiddleware(object):
         # mark the visitor as human.
         #
         if self.count_humans_only and \
-            environ.get('REQUEST_METHOD', '') == 'POST' and \
-            self.human_callback_token in environ.get('PATH_INFO', ''):
+                environ.get('REQUEST_METHOD', '') == 'POST' and \
+                self.human_callback_token in environ.get('PATH_INFO', ''):
 
             length = int(environ.get('CONTENT_LENGTH', '0'))
             qs = parse_qs(environ['wsgi.input'].read(length).decode())

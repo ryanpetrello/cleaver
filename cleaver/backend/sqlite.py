@@ -22,51 +22,51 @@ class SQLiteBackend(CleaverBackend):
 
         # list of experiments
         self.execute(
-            "CREATE TABLE IF NOT EXISTS e " \
-                "(name TEXT PRIMARY KEY, started_on TEXT)"
+            "CREATE TABLE IF NOT EXISTS e "
+            "(name TEXT PRIMARY KEY, started_on TEXT)"
         )
 
         # collection of variants for an experiment
         self.execute(
-            "CREATE TABLE IF NOT EXISTS v " \
-                "(name TEXT PRIMARY KEY, experiment_name TEXT, _ord INTEGER)"
+            "CREATE TABLE IF NOT EXISTS v "
+            "(name TEXT PRIMARY KEY, experiment_name TEXT, _ord INTEGER)"
         )
 
         # mapping between (identity, experiment_name) and variant
         self.execute(
-            "CREATE TABLE IF NOT EXISTS i (" \
-                "identity TEXT PRIMAY KEY," \
-                "experiment_name TEXT," \
-                "variant TEXT," \
-                "PRIMARY KEY (identity, experiment_name)"
+            "CREATE TABLE IF NOT EXISTS i ("
+            "identity TEXT PRIMAY KEY,"
+            "experiment_name TEXT,"
+            "variant TEXT,"
+            "PRIMARY KEY (identity, experiment_name)"
             ")"
         )
 
         # counters for participants
         self.execute(
-            "CREATE TABLE IF NOT EXISTS p (" \
-                "experiment_name TEXT," \
-                "variant TEXT," \
-                "total INTEGER DEFAULT 0," \
-                "PRIMARY KEY (experiment_name, variant)" \
+            "CREATE TABLE IF NOT EXISTS p ("
+            "experiment_name TEXT,"
+            "variant TEXT,"
+            "total INTEGER DEFAULT 0,"
+            "PRIMARY KEY (experiment_name, variant)"
             ")"
         )
 
         # counters for conversions
         self.execute(
-            "CREATE TABLE IF NOT EXISTS c (" \
-                "experiment_name TEXT," \
-                "variant TEXT," \
-                "total INTEGER DEFAULT 0," \
-                "PRIMARY KEY (experiment_name, variant)" \
+            "CREATE TABLE IF NOT EXISTS c ("
+            "experiment_name TEXT,"
+            "variant TEXT,"
+            "total INTEGER DEFAULT 0,"
+            "PRIMARY KEY (experiment_name, variant)"
             ")"
         )
 
         # verified humans
         self.execute(
-            "CREATE TABLE IF NOT EXISTS h (" \
-                "identity TEXT," \
-                "PRIMARY KEY (identity)" \
+            "CREATE TABLE IF NOT EXISTS h ("
+            "identity TEXT,"
+            "PRIMARY KEY (identity)"
             ")"
         )
 
@@ -120,8 +120,8 @@ class SQLiteBackend(CleaverBackend):
         Returns a ``cleaver.experiment.Experiment`` or ``None``
         """
         row = self.execute(
-            'SELECT name, started_on as "started_on [timestamp]" FROM e ' \
-                'WHERE name=?',
+            'SELECT name, started_on as "started_on [timestamp]" FROM e '
+            'WHERE name=?',
             (name,)
         ).fetchone()
         return self.experiment_factory(row) if row else None
@@ -179,8 +179,8 @@ class SQLiteBackend(CleaverBackend):
         :param variant the string name of the variant
         """
         self.execute(
-            'INSERT OR IGNORE INTO i (identity, experiment_name, variant) ' \
-                'VALUES (?, ?, ?)',
+            'INSERT OR IGNORE INTO i (identity, experiment_name, variant) '
+            'VALUES (?, ?, ?)',
             (identity, experiment_name, variant)
         )
 
@@ -196,8 +196,8 @@ class SQLiteBackend(CleaverBackend):
             (experiment_name, variant)
         )
         self.execute(
-            'UPDATE p SET total = total + 1 WHERE ' \
-                'experiment_name = ? AND variant = ?',
+            'UPDATE p SET total = total + 1 WHERE '
+            'experiment_name = ? AND variant = ?',
             (experiment_name, variant)
         )
 
@@ -213,8 +213,8 @@ class SQLiteBackend(CleaverBackend):
             (experiment_name, variant)
         )
         self.execute(
-            'UPDATE c SET total = total + 1 WHERE ' \
-                'experiment_name = ? AND variant = ?',
+            'UPDATE c SET total = total + 1 WHERE '
+            'experiment_name = ? AND variant = ?',
             (experiment_name, variant)
         )
 

@@ -7,8 +7,8 @@ from cleaver import util
 class Cleaver(object):
 
     def __init__(self, environ, identity, backend,
-            count_humans_only=False,
-            human_callback_token='__cleaver_human_verification__'):
+                 count_humans_only=False,
+                 human_callback_token='__cleaver_human_verification__'):
         """
         Create a new Cleaver instance.
 
@@ -32,10 +32,10 @@ class Cleaver(object):
         """
 
         if not isinstance(identity, CleaverIdentityProvider) and \
-            not callable(identity):
+                not callable(identity):
             raise RuntimeError(
-                '%s must be callable or implement ' \
-                    'cleaver.identity.CleaverIdentityProvider' % identity
+                '%s must be callable or implement '
+                'cleaver.identity.CleaverIdentityProvider' % identity
             )
         if not isinstance(backend, CleaverBackend):
             raise RuntimeError(
@@ -94,8 +94,8 @@ class Cleaver(object):
         # Perform some minimal type checking
         if not isinstance(experiment_name, string_types):
             raise RuntimeError(
-                'Invalid experiment name: %s must be a string.' % \
-                    experiment_name
+                'Invalid experiment name: %s must be a string.' %
+                experiment_name
             )
 
         keys, values, weights = self._parse_variants(variants)
@@ -115,8 +115,8 @@ class Cleaver(object):
         else:
             if set(experiment.variants) != set(keys):
                 raise RuntimeError(
-                    'An experiment named %s already exists with different ' \
-                        'variants.' % experiment_name
+                    'An experiment named %s already exists with different '
+                    'variants.' % experiment_name
                 )
 
         # Retrieve the variant assigned to the current user
@@ -156,8 +156,8 @@ class Cleaver(object):
 
         if len(variants) == 1:
             raise RuntimeError(
-                'Experiments must have at least two variants ' \
-                    '(a control and an alternative).'
+                'Experiments must have at least two variants '
+                '(a control and an alternative).'
             )
 
         def add_defaults(v):
@@ -171,13 +171,13 @@ class Cleaver(object):
             # Perform some minimal type checking
             if not isinstance(v[0], string_types):
                 raise RuntimeError(
-                    'Invalid variant name: %s must be a string.' % \
-                        v[0]
+                    'Invalid variant name: %s must be a string.' %
+                    v[0]
                 )
             if not isinstance(v[2], int):
                 raise RuntimeError(
-                    'Invalid variant weight: %s must be an integer.' % \
-                        v[2]
+                    'Invalid variant weight: %s must be an integer.' %
+                    v[2]
                 )
 
             return v

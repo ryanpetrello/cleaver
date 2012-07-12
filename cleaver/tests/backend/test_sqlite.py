@@ -84,8 +84,8 @@ class TestSQLite(TestCase):
         b.execute(
             'INSERT INTO h (identity) VALUES (?)', ('ryan',)
         )
-        assert b.is_verified_human('ryan') == True
-        assert b.is_verified_human('googlebot') == False
+        assert b.is_verified_human('ryan') is True
+        assert b.is_verified_human('googlebot') is False
 
     def test_mark_human(self):
         b = self.b
@@ -174,7 +174,7 @@ class TestSQLite(TestCase):
         b.participate('ryan', 'text_size', 'medium')
 
         assert b.get_variant('ryan', 'text_size') == 'medium'
-        assert b.get_variant('ryan', 'another_test') == None
+        assert b.get_variant('ryan', 'another_test') is None
 
     def test_score(self):
         b = self.b

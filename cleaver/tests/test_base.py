@@ -148,7 +148,7 @@ class TestSplit(TestCase):
     @patch.object(FakeBackend, 'participate')
     @patch.object(FakeIdentityProvider, 'get_identity')
     def test_variant_participation(self, get_identity, participate,
-            get_experiment, random_variant):
+                                   get_experiment, random_variant):
         cleaver = Cleaver({}, FakeIdentityProvider(), FakeBackend())
         get_experiment.return_value.name = 'show_promo'
         get_experiment.return_value.variants = ('True', 'False')
@@ -166,7 +166,7 @@ class TestSplit(TestCase):
         get_experiment.return_value.name = 'show_promo'
         get_experiment.return_value.variants = ('True', 'False')
 
-        assert cleaver.split('show_promo') == False
+        assert cleaver.split('show_promo') is False
 
     @patch.object(FakeBackend, 'mark_conversion')
     @patch.object(FakeBackend, 'get_variant')

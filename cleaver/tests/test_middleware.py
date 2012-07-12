@@ -153,7 +153,8 @@ class TestMiddleware(TestCase):
     @patch.object(FakeBackend, 'get_variant')
     @patch.object(FakeBackend, 'all_experiments')
     def test_callback_with_new_participants(self, all_experiments,
-        get_variant, mark_participant, mark_human):
+                                            get_variant, mark_participant,
+                                            mark_human):
 
         first = Mock()
         first.name = 'show_promo'
