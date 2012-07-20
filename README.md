@@ -21,28 +21,30 @@ of an HTTP request (like a controller or a template) to start automatically
 segmenting visitors:
 
 ``` python
-    cleaver = request.environ['cleaver']
-    
-    # Start a new A/B experiment, returning True or False
-    show_promo = cleaver('show_promo')
-    
-    # ...later, when the user completes the experiment, score the conversion...
-    cleaver.score('show_promo')
+cleaver = request.environ['cleaver']
+
+# Start a new A/B experiment, returning True or False
+show_promo = cleaver('show_promo')
+
+# ...later, when the user completes the experiment, score the conversion...
+cleaver.score('show_promo')
 ```
 
 ### Specifying Variants
 
 Cleaver can also be used to specify an arbitrary number of variants:
 
-    cleaver = request.environ['cleaver']
-    
-    # Start a new A/B experiment, returning one of several options
-    background_color = cleaver(
-        'background_color',
-        ('Red', '#F00'),
-        ('Green', '#0F0'),
-        ('Blue', '#00F')
-    )
+``` python
+cleaver = request.environ['cleaver']
+
+# Start a new A/B experiment, returning one of several options
+background_color = cleaver(
+    'background_color',
+    ('Red', '#F00'),
+    ('Green', '#0F0'),
+    ('Blue', '#00F')
+)
+```
 
 ### Weighted Variants
 
@@ -50,13 +52,15 @@ Maybe you only want to present an experimental change to a small portion of
 your user base.  Variant weights make this simple - just add a third integer
 argument to each variant.
     
-    cleaver = request.environ['cleaver']
-    
-    background_color = cleaver(
-        'show_new_experimental_feature',
-        ('True', True, 1),
-        ('False', False, 9)
-    )
+``` python
+cleaver = request.environ['cleaver']
+
+background_color = cleaver(
+    'show_new_experimental_feature',
+    ('True', True, 1),
+    ('False', False, 9)
+)
+```
 
 The default weight for variants, when left unspecified, is 1.
 
@@ -65,28 +69,30 @@ The default weight for variants, when left unspecified, is 1.
 Cleaver works out of the box with most WSGI frameworks.  To get started, wrap
 any WSGI application with ``cleaver.SplitMiddleware``.  For example:
 
-    from cleaver import SplitMiddleware
-    from cleaver.backend.sqlite import SQLiteBackend
+``` python
+from cleaver import SplitMiddleware
+from cleaver.backend.sqlite import SQLiteBackend
 
-    def simple_app(environ, start_response):
-        # Get the session object from the environ
-        cleaver = environ['cleaver']
+def simple_app(environ, start_response):
+    # Get the session object from the environ
+    cleaver = environ['cleaver']
 
-        button_size = cleaver(
-            'Button Size',
-            ('Small', 12),
-            ('Medium', 18),
-            ('Large', 24)
-        )
-
-        start_response('200 OK', [('Content-type', 'text/html')])
-        return ['<button style="font-size:%spx;">Sign Up Now!</button>' % button_size]
-
-    wsgi_app = SplitMiddleware(
-        simple_app,
-        lambda environ: environ['REMOTE_ADDR'],  # Track by IP for examples' sake
-        SQLiteBackend('./experiment.data')
+    button_size = cleaver(
+        'Button Size',
+        ('Small', 12),
+        ('Medium', 18),
+        ('Large', 24)
     )
+
+    start_response('200 OK', [('Content-type', 'text/html')])
+    return ['<button style="font-size:%spx;">Sign Up Now!</button>' % button_size]
+
+wsgi_app = SplitMiddleware(
+    simple_app,
+    lambda environ: environ['REMOTE_ADDR'],  # Track by IP for examples' sake
+    SQLiteBackend('./experiment.data')
+)
+```
 
 ``cleaver.SplitMiddleware`` requires an identity and backend adaptor (for
 recognizing returning visitors and storing statistical data).  Luckily, Cleaver
@@ -99,11 +105,13 @@ is easy too - just have a look at the full documentation <link>.
 For QA and testing purposes, you may need to force your application to always
 return a certain variant.
 
+``` python
     wsgi_app = SplitMiddleware(
         simple_app,
         ...
         allow_override=True
     )
+```
 
 If your application has an experiment called ``button_size`` with variants
 called `small`, `medium`, and `large`, a url in the format:
@@ -126,11 +134,13 @@ don't generally convert, can result in skewed conversion metrics.
 To combat this, Cleaver can be configured to defer counting of visitors as
 participants until after they've proven they're probably not a bot:
 
+``` python
     wsgi_app = SplitMiddleware(
         simple_app,
         ...
         count_humans_only=True
     )
+```
 
 ...and then, on every page that presents an A/B decision, add the following
 call directly prior to the closing ``</body>`` tag (adapted to your templating
@@ -146,6 +156,7 @@ language of choice):
 Cleaver comes with a lightweight WSGI front end which can be used to see how
 your experiments are going.
 
+``` python
     from cleaver.reports.web import CleaverWebUI
     from cleaver.backend.sqlite import SQLiteBackend
     
@@ -155,6 +166,7 @@ your experiments are going.
     
     from wsgiref import simple_server
     simple_server.make_server('', 8000, wsgi_app).serve_forever()
+```
 
 <img src="http://imgur.com/y1SUf.png" />
 
