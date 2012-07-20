@@ -20,6 +20,7 @@ Starting a new A/B test is *easy*.  Use this code anywhere within the context
 of an HTTP request (like a controller or a template) to start automatically
 segmenting visitors:
 
+``` python
     cleaver = request.environ['cleaver']
     
     # Start a new A/B experiment, returning True or False
@@ -27,6 +28,7 @@ segmenting visitors:
     
     # ...later, when the user completes the experiment, score the conversion...
     cleaver.score('show_promo')
+```
 
 ### Specifying Variants
 
