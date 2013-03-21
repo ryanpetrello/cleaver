@@ -71,7 +71,7 @@ any WSGI application with ``cleaver.SplitMiddleware``.  For example:
 
 ``` python
 from cleaver import SplitMiddleware
-from cleaver.backend.sqlite import SQLiteBackend
+from cleaver.backend.db import SQLAlchemyBackend
 
 def simple_app(environ, start_response):
     # Get the session object from the environ
@@ -90,16 +90,16 @@ def simple_app(environ, start_response):
 wsgi_app = SplitMiddleware(
     simple_app,
     lambda environ: environ['REMOTE_ADDR'],  # Track by IP for examples' sake
-    SQLiteBackend('./experiment.data')
+    SQLAlchemyBackend('sqlite:///experiment.data')
 )
 ```
 
 ``cleaver.SplitMiddleware`` requires an identity and backend adaptor (for
 recognizing returning visitors and storing statistical data).  Luckily, Cleaver
 comes with a few out of the box, such as support for [Beaker
-sessions](http://beaker.groovie.org/), and the [SQLite](http://www.sqlite.org/)
-and [MongoDB](http://www.mongodb.org/) storage engines.  Implementing your own
-is easy too - just have a look at the full documentation <link>.
+sessions](http://beaker.groovie.org/), and storage via
+[SQLAlchemy](http://www.sqlalchemy.org/).  Implementing your own is easy too
+- just have a look at the full documentation <link>.
 
 ### Overriding Variants
 For QA and testing purposes, you may need to force your application to always
@@ -158,10 +158,10 @@ your experiments are going.
 
 ``` python
     from cleaver.reports.web import CleaverWebUI
-    from cleaver.backend.sqlite import SQLiteBackend
+    from cleaver.backend.db import SQLAlchemyBackend
     
     wsgi_app = CleaverWebUI(
-        SQLiteBackend('./experiment.data')
+        SQLAlchemyBackend('sqlite:///experiment.data')
     )
     
     from wsgiref import simple_server

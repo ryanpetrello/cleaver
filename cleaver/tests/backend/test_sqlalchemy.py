@@ -2,47 +2,50 @@ from unittest import TestCase
 from datetime import datetime
 
 from mock import Mock, patch
+from sqlalchemy.engine.reflection import Inspector
 
 from cleaver import Cleaver
 from cleaver.experiment import Experiment
 from cleaver.tests import FakeIdentityProvider
-from cleaver.backend.sqlite import SQLiteBackend
+from cleaver.backend.db import SQLAlchemyBackend, model
 
 
-class TestSQLite(TestCase):
+class TestSQLAlchemy(TestCase):
 
     def setUp(self):
-        self.b = SQLiteBackend()
+        self.b = SQLAlchemyBackend()
 
     def tearDown(self):
-        self.b.close()
+        engine = self.b.Session.bind.connect()
+        for table_name in Inspector.from_engine(engine).get_table_names():
+            trans = engine.begin()
+
+            # Attempt to truncate all data in the table and commit
+            engine.execute('DELETE FROM %s' % table_name)
+            trans.commit()
+        engine.close()
 
     def test_valid_configuration(self):
-        cleaver = Cleaver({}, FakeIdentityProvider(), SQLiteBackend())
+        cleaver = Cleaver({}, FakeIdentityProvider(), SQLAlchemyBackend())
         assert isinstance(cleaver._identity, FakeIdentityProvider)
-        assert isinstance(cleaver._backend, SQLiteBackend)
+        assert isinstance(cleaver._backend, SQLAlchemyBackend)
 
     def test_save_experiment(self):
         b = self.b
         b.save_experiment('text_size', ('small', 'medium', 'large'))
 
-        rows = b.execute(
-            'SELECT name, started_on as "started_on [timestamp]" FROM e'
-        ).fetchall()
-        assert len(rows) == 1
-        assert rows[0]['name'] == 'text_size'
-        assert rows[0]['started_on'].date() == datetime.utcnow().date()
+        assert self.b.Session.query(model.Experiment).count() == 1
+        experiment = self.b.Session.query(model.Experiment).first()
+        assert experiment.name == 'text_size'
+        assert experiment.started_on.date() == datetime.utcnow().date()
 
-        rows = b.execute(
-            'SELECT name, experiment_name FROM v'
-        ).fetchall()
-        assert len(rows) == 3
-        assert rows[0]['name'] == 'small'
-        assert rows[0]['experiment_name'] == 'text_size'
-        assert rows[1]['name'] == 'medium'
-        assert rows[1]['experiment_name'] == 'text_size'
-        assert rows[2]['name'] == 'large'
-        assert rows[2]['experiment_name'] == 'text_size'
+        assert len(experiment.variants) == 3
+        assert experiment.variants[0].name == 'small'
+        assert experiment.variants[0].experiment_name == 'text_size'
+        assert experiment.variants[1].name == 'medium'
+        assert experiment.variants[1].experiment_name == 'text_size'
+        assert experiment.variants[2].name == 'large'
+        assert experiment.variants[2].experiment_name == 'text_size'
 
     def test_get_experiment_no_match(self):
         b = self.b
@@ -81,53 +84,66 @@ class TestSQLite(TestCase):
 
     def test_is_verified_human(self):
         b = self.b
-        b.execute(
-            'INSERT INTO h (identity) VALUES (?)', ('ryan',)
-        )
+        b.Session.add(model.VerifiedHuman(identity='ryan'))
+        b.Session.commit()
+
         assert b.is_verified_human('ryan') is True
         assert b.is_verified_human('googlebot') is False
 
     def test_mark_human(self):
         b = self.b
+
         b.mark_human('ryan')
-        assert len(b.execute(
-            'SELECT identity FROM h WHERE identity=?', ('ryan',)
-        ).fetchall()) == 1
+        query = b.Session.query(model.VerifiedHuman).filter_by(identity='ryan')
+        assert query.count() == 1
+        assert query.first() is not None
+
+        b.mark_human('ryan')
+        query = b.Session.query(model.VerifiedHuman).filter_by(identity='ryan')
+        assert query.count() == 1
+        assert query.first() is not None
 
     def test_unverified_participate(self):
         b = self.b
         b.save_experiment('text_size', ('small', 'medium', 'large'))
         b.participate('ryan', 'text_size', 'medium')
 
-        people = b.execute('SELECT * FROM i').fetchall()
+        people = b.Session.query(model.Participant).all()
         assert len(people) == 1
 
-        assert people[0]['identity'] == 'ryan'
-        assert people[0]['experiment_name'] == 'text_size'
-        assert people[0]['variant'] == 'medium'
+        assert people[0].identity == 'ryan'
+        assert people[0].experiment_name == 'text_size'
+        assert people[0].variant == 'medium'
 
-        participations = b.execute("SELECT * FROM p").fetchall()
-        assert len(participations) == 0
+        assert b.Session.query(model.TrackedEvent).filter_by(
+            type='PARTICIPANT'
+        ).count() == 0
 
-    @patch.object(SQLiteBackend, 'is_verified_human', Mock(return_value=True))
+    @patch.object(
+        SQLAlchemyBackend,
+        'is_verified_human',
+        Mock(return_value=True)
+    )
     def test_verified_participate(self):
         b = self.b
         b.save_experiment('text_size', ('small', 'medium', 'large'))
         b.participate('ryan', 'text_size', 'medium')
 
-        people = b.execute('SELECT * FROM i').fetchall()
+        people = b.Session.query(model.Participant).all()
         assert len(people) == 1
 
-        assert people[0]['identity'] == 'ryan'
-        assert people[0]['experiment_name'] == 'text_size'
-        assert people[0]['variant'] == 'medium'
+        assert people[0].identity == 'ryan'
+        assert people[0].experiment_name == 'text_size'
+        assert people[0].variant == 'medium'
 
-        participations = b.execute("SELECT * FROM p").fetchall()
+        participations = b.Session.query(model.TrackedEvent).filter_by(
+            type='PARTICIPANT'
+        ).all()
         assert len(participations) == 1
 
-        assert participations[0]['experiment_name'] == 'text_size'
-        assert participations[0]['variant'] == 'medium'
-        assert participations[0]['total'] == 1
+        assert participations[0].experiment_name == 'text_size'
+        assert participations[0].variant_name == 'medium'
+        assert participations[0].total == 1
 
     def test_unverified_participate_multiple(self):
         b = self.b
@@ -136,17 +152,22 @@ class TestSQLite(TestCase):
         b.participate('ryan', 'text_size', 'medium')
         b.participate('ryan', 'text_size', 'medium')
 
-        people = b.execute('SELECT * FROM i').fetchall()
+        people = b.Session.query(model.Participant).all()
         assert len(people) == 1
 
-        assert people[0]['identity'] == 'ryan'
-        assert people[0]['experiment_name'] == 'text_size'
-        assert people[0]['variant'] == 'medium'
+        assert people[0].identity == 'ryan'
+        assert people[0].experiment_name == 'text_size'
+        assert people[0].variant == 'medium'
 
-        participations = b.execute("SELECT * FROM p").fetchall()
-        assert len(participations) == 0
+        assert b.Session.query(model.TrackedEvent).filter_by(
+            type='PARTICIPANT'
+        ).count() == 0
 
-    @patch.object(SQLiteBackend, 'is_verified_human', Mock(return_value=True))
+    @patch.object(
+        SQLAlchemyBackend,
+        'is_verified_human',
+        Mock(return_value=True)
+    )
     def test_verified_participate_multiple(self):
         b = self.b
         b.save_experiment('text_size', ('small', 'medium', 'large'))
@@ -154,19 +175,21 @@ class TestSQLite(TestCase):
         b.participate('ryan', 'text_size', 'medium')
         b.participate('ryan', 'text_size', 'medium')
 
-        people = b.execute('SELECT * FROM i').fetchall()
+        people = b.Session.query(model.Participant).all()
         assert len(people) == 1
 
-        assert people[0]['identity'] == 'ryan'
-        assert people[0]['experiment_name'] == 'text_size'
-        assert people[0]['variant'] == 'medium'
+        assert people[0].identity == 'ryan'
+        assert people[0].experiment_name == 'text_size'
+        assert people[0].variant == 'medium'
 
-        participations = b.execute("SELECT * FROM p").fetchall()
+        participations = b.Session.query(model.TrackedEvent).filter_by(
+            type='PARTICIPANT'
+        ).all()
         assert len(participations) == 1
 
-        assert participations[0]['experiment_name'] == 'text_size'
-        assert participations[0]['variant'] == 'medium'
-        assert participations[0]['total'] == 3
+        assert participations[0].experiment_name == 'text_size'
+        assert participations[0].variant_name == 'medium'
+        assert participations[0].total == 3
 
     def test_get_variant(self):
         b = self.b
@@ -180,12 +203,14 @@ class TestSQLite(TestCase):
         b = self.b
         b.mark_conversion('text_size', 'medium')
 
-        conversions = b.execute('SELECT * FROM c').fetchall()
+        conversions = b.Session.query(model.TrackedEvent).filter_by(
+            type='CONVERSION'
+        ).all()
         assert len(conversions) == 1
 
-        assert conversions[0]['experiment_name'] == 'text_size'
-        assert conversions[0]['variant'] == 'medium'
-        assert conversions[0]['total'] == 1
+        assert conversions[0].experiment_name == 'text_size'
+        assert conversions[0].variant_name == 'medium'
+        assert conversions[0].total == 1
 
     def test_score_multiple(self):
         b = self.b
@@ -193,16 +218,21 @@ class TestSQLite(TestCase):
         b.mark_conversion('text_size', 'large')
         b.mark_conversion('text_size', 'medium')
 
-        conversions = b.execute('SELECT * FROM c').fetchall()
+        conversions = b.Session.query(model.TrackedEvent).filter_by(
+            type='CONVERSION'
+        ).all()
         assert len(conversions) == 2
 
-        assert conversions[0]['experiment_name'] == 'text_size'
-        assert conversions[0]['variant'] == 'medium'
-        assert conversions[0]['total'] == 2
-
-        assert conversions[1]['experiment_name'] == 'text_size'
-        assert conversions[1]['variant'] == 'large'
-        assert conversions[1]['total'] == 1
+        for c in conversions:
+            assert ((
+                c.experiment_name == 'text_size' and
+                c.variant_name == 'medium' and
+                c.total == 2
+            ) or (
+                c.experiment_name == 'text_size' and
+                c.variant_name == 'large' and
+                c.total == 1
+            ))
 
     def test_unverified_participants(self):
         b = self.b
@@ -217,7 +247,11 @@ class TestSQLite(TestCase):
         assert b.participants('show_promo', 'True') == 0
         assert b.participants('show_promo', 'False') == 0
 
-    @patch.object(SQLiteBackend, 'is_verified_human', Mock(return_value=True))
+    @patch.object(
+        SQLAlchemyBackend,
+        'is_verified_human',
+        Mock(return_value=True)
+    )
     def test_verified_participants(self):
         b = self.b
         b.participate('ryan', 'text_color', 'small')
