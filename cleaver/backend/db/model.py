@@ -57,7 +57,10 @@ class TrackedEvent(ModelBase):
         'CONVERSION'
     )
 
-    type = sa.Column(sa.Enum(*TYPES, native_enum=False), primary_key=True)
+    type = sa.Column(
+        sa.Enum(*TYPES, **{'native_enum': False}),
+        primary_key=True
+    )
 
     experiment_name = sa.Column(
         sa.UnicodeText,
