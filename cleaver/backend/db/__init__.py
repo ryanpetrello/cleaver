@@ -15,7 +15,7 @@ _sqlalchemy_installed()
 from sqlalchemy import and_
 from sqlalchemy.exc import IntegrityError
 
-import model
+from . import model
 from .session import session_for
 
 from cleaver.experiment import Experiment as CleaverExperiment
