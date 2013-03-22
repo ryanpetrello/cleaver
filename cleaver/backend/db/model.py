@@ -8,7 +8,7 @@ ModelBase = declarative_base()
 class Experiment(ModelBase):
     __tablename__ = 'cleaver_experiment'
 
-    name = sa.Column(sa.UnicodeText, primary_key=True)
+    name = sa.Column(sa.Unicode(255), primary_key=True)
     started_on = sa.Column(sa.DateTime, index=True)
 
     variants = relationship(
@@ -29,10 +29,10 @@ class Experiment(ModelBase):
 class Variant(ModelBase):
     __tablename__ = 'cleaver_variant'
 
-    name = sa.Column(sa.UnicodeText, primary_key=True)
+    name = sa.Column(sa.Unicode(255), primary_key=True)
     order = sa.Column(sa.Integer)
     experiment_name = sa.Column(
-        sa.UnicodeText,
+        sa.Unicode(255),
         sa.ForeignKey('%s.name' % Experiment.__tablename__)
     )
 
@@ -42,11 +42,11 @@ class Participant(ModelBase):
 
     identity = sa.Column(sa.UnicodeText, primary_key=True)
     experiment_name = sa.Column(
-        sa.UnicodeText,
+        sa.Unicode(255),
         sa.ForeignKey('%s.name' % Experiment.__tablename__),
         primary_key=True
     )
-    variant = sa.Column(sa.UnicodeText)
+    variant = sa.Column(sa.Unicode(255))
 
 
 class TrackedEvent(ModelBase):
@@ -63,12 +63,12 @@ class TrackedEvent(ModelBase):
     )
 
     experiment_name = sa.Column(
-        sa.UnicodeText,
+        sa.Unicode(255),
         sa.ForeignKey('%s.name' % Experiment.__tablename__),
         primary_key=True
     )
     variant_name = sa.Column(
-        sa.UnicodeText,
+        sa.Unicode(255),
         sa.ForeignKey('%s.name' % Variant.__tablename__),
         primary_key=True
     )
