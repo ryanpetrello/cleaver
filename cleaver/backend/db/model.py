@@ -40,7 +40,7 @@ class Variant(ModelBase):
 class Participant(ModelBase):
     __tablename__ = 'cleaver_participant'
 
-    identity = sa.Column(sa.UnicodeText, primary_key=True)
+    identity = sa.Column(sa.Unicode(255), primary_key=True)
     experiment_name = sa.Column(
         sa.Unicode(255),
         sa.ForeignKey('%s.name' % Experiment.__tablename__),
@@ -78,4 +78,4 @@ class TrackedEvent(ModelBase):
 class VerifiedHuman(ModelBase):
     __tablename__ = 'cleaver_human'
 
-    identity = sa.Column(sa.UnicodeText, primary_key=True)
+    identity = sa.Column(sa.Unicode(255), primary_key=True)
