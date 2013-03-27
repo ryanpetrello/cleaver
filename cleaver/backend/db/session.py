@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 from sqlalchemy import create_engine, event
-from sqlalchemy.orm import sessionmaker, scoped_session, mapper
+from sqlalchemy.orm import scoped_session, sessionmaker, mapper
 
 from .model import ModelBase
 
@@ -20,6 +20,12 @@ def session_for(dburi, **kwargs):
     engine = get_engine(dburi, **kwargs)
     if dburi not in _SESSIONS:
         _SESSIONS[dburi] = scoped_session(sessionmaker(bind=engine))
+
+        # When a entity is instantiated, automatically add it to the Session
+        @event.listens_for(mapper, 'init')
+        def auto_add(target, args, kwargs):
+            if isinstance(target, ModelBase):
+                _SESSIONS[dburi].add(target)
 
     if not _SETUP['results']:
         ModelBase.metadata.create_all(engine)

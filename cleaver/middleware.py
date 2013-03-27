@@ -1,5 +1,8 @@
+import tempfile
+import cgi
+
 from .base import Cleaver
-from .compat import urlencode, parse_qs, parse_qsl
+from .compat import urlencode, parse_qsl
 from .backend import CleaverBackend
 from .identity import CleaverIdentityProvider
 
@@ -75,13 +78,28 @@ class SplitMiddleware(object):
                 environ.get('REQUEST_METHOD', '') == 'POST' and \
                 self.human_callback_token in environ.get('PATH_INFO', ''):
 
-            length = int(environ.get('CONTENT_LENGTH', '0'))
-            qs = parse_qs(environ['wsgi.input'].read(length).decode())
+            fp, length = SplitMiddleware._copy_body_to_tempfile(environ)
+            environ.setdefault('CONTENT_LENGTH', length)
+
+            fs = cgi.FieldStorage(
+                fp=fp,
+                environ=environ,
+                keep_blank_values=True
+            )
 
             try:
-                x = qs['x'][0]
-                y = qs['y'][0]
-                z = qs['z'][0]
+                try:
+                    x = int(fs.getlist('x')[0])
+                except (IndexError, ValueError):
+                    x = 0
+                try:
+                    y = int(fs.getlist('y')[0])
+                except (IndexError, ValueError):
+                    y = 0
+                try:
+                    z = int(fs.getlist('z')[0])
+                except (IndexError, ValueError):
+                    z = 0
 
                 # The AJAX call will include three POST arguments, X, Y, and Z
                 #
@@ -89,7 +107,7 @@ class SplitMiddleware(object):
                 # (most web crawlers won't perform complicated Javascript
                 # execution like math and HTTP callbacks, because it's just too
                 # expensive at scale)
-                if x and y and z and int(x) + int(y) == int(z):
+                if x and y and z and x + y == z:
                     # Mark the visitor as a human
                     self._backend.mark_human(cleaver.identity)
 
@@ -138,3 +156,34 @@ class SplitMiddleware(object):
         # arguments.
         if 'cleaver.override' in environ:
             environ['QUERY_STRING'] = urlencode(qs)
+
+    @classmethod
+    def _copy_body_to_tempfile(cls, environ):
+        """
+        Copy wsgi.input to a tempfile so it can be reused.
+        """
+        try:
+            length = int(environ.get('CONTENT_LENGTH', 0))
+        except ValueError:
+            length = 0
+
+        fileobj = tempfile.SpooledTemporaryFile(1024*1024)
+        if length:
+            remaining = length
+            while remaining > 0:
+                data = environ['wsgi.input'].read(min(remaining, 65536))
+                if not data:
+                    raise IOError(
+                        "Client disconnected (%s more bytes were expected)"
+                        % remaining
+                    )
+                fileobj.write(data)
+                remaining -= len(data)
+        else:
+            body = environ['wsgi.input'].read()
+            length = len(body)
+            fileobj.write(body)
+
+        fileobj.seek(0)
+        environ['wsgi.input'] = fileobj
+        return fileobj, length

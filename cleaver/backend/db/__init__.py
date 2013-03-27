@@ -13,7 +13,6 @@ def _sqlalchemy_installed():
 _sqlalchemy_installed()
 
 from sqlalchemy import and_
-from sqlalchemy.exc import IntegrityError
 
 from . import model
 from .session import session_for
@@ -31,10 +30,7 @@ class SQLAlchemyBackend(CleaverBackend):
     def __init__(self, dburi='sqlite://', engine_options={}):
         self.dburi = dburi
         self.engine_options = engine_options
-
-    @property
-    def Session(self):
-        return session_for(
+        self.Session = session_for(
             dburi=self.dburi,
             **self.engine_options
         )
@@ -87,31 +83,33 @@ class SQLAlchemyBackend(CleaverBackend):
         :param variants a list of strings, each with a unique variant name
         """
         try:
-            self.Session.add(
-                model.Experiment(
-                    name=name,
-                    started_on=datetime.utcnow(),
-                    variants=[
-                        model.Variant(name=v, order=i)
-                        for i, v in enumerate(variants)
-                    ]
-                )
+            model.Experiment(
+                name=name,
+                started_on=datetime.utcnow(),
+                variants=[
+                    model.Variant(name=v, order=i)
+                    for i, v in enumerate(variants)
+                ]
             )
             self.Session.commit()
         finally:
             self.Session.close()
 
     def is_verified_human(self, identity):
-        return self.Session.query(
-            model.VerifiedHuman
-        ).filter_by(identity=identity).first() is not None
+        try:
+            return self.Session.query(
+                model.VerifiedHuman
+            ).filter_by(identity=identity).first() is not None
+        finally:
+            self.Session.close()
 
     def mark_human(self, identity):
         try:
-            self.Session.add(model.VerifiedHuman(identity=identity))
-            self.Session.commit()
-        except IntegrityError:
-            self.Session.rollback()
+            if self.Session.query(model.VerifiedHuman).filter_by(
+                identity=identity
+            ).count() == 0:
+                model.VerifiedHuman(identity=identity)
+                self.Session.commit()
         finally:
             self.Session.close()
 
@@ -124,11 +122,14 @@ class SQLAlchemyBackend(CleaverBackend):
 
         Returns a ``String`` or `None`
         """
-        match = self.Session.query(model.Participant).filter(and_(
-            model.Participant.identity == identity,
-            model.Participant.experiment_name == experiment_name
-        )).first()
-        return match.variant if match else None
+        try:
+            match = self.Session.query(model.Participant).filter(and_(
+                model.Participant.identity == identity,
+                model.Participant.experiment_name == experiment_name
+            )).first()
+            return match.variant if match else None
+        finally:
+            self.Session.close()
 
     def set_variant(self, identity, experiment_name, variant):
         """
@@ -144,29 +145,27 @@ class SQLAlchemyBackend(CleaverBackend):
                 model.Participant.experiment_name == experiment_name,
                 model.Participant.variant == variant
             )).count() == 0:
-                self.Session.add(model.Participant(
+                model.Participant(
                     identity=identity,
                     experiment_name=experiment_name,
                     variant=variant
-                ))
+                )
                 self.Session.commit()
         finally:
             self.Session.close()
 
     def _mark_event(self, type, experiment_name, variant):
         try:
-            event = self.Session.query(model.TrackedEvent).filter(and_(
+            if self.Session.query(model.TrackedEvent).filter(and_(
                 model.TrackedEvent.type == type,
                 model.TrackedEvent.experiment_name == experiment_name,
                 model.TrackedEvent.variant_name == variant
-            )).first()
-            if event is None:
-                event = model.TrackedEvent(
+            )).first() is None:
+                model.TrackedEvent(
                     type=type,
                     experiment_name=experiment_name,
                     variant_name=variant
                 )
-                self.Session.add(event)
                 self.Session.commit()
         finally:
             self.Session.close()
@@ -208,12 +207,15 @@ class SQLAlchemyBackend(CleaverBackend):
         self._mark_event('CONVERSION', experiment_name, variant)
 
     def _total_events(self, type, experiment_name, variant):
-        row = self.Session.query(model.TrackedEvent).filter(and_(
-            model.TrackedEvent.type == type,
-            model.TrackedEvent.experiment_name == experiment_name,
-            model.TrackedEvent.variant_name == variant
-        )).first()
-        return row.total if row else 0
+        try:
+            row = self.Session.query(model.TrackedEvent).filter(and_(
+                model.TrackedEvent.type == type,
+                model.TrackedEvent.experiment_name == experiment_name,
+                model.TrackedEvent.variant_name == variant
+            )).first()
+            return row.total if row else 0
+        finally:
+            self.Session.close()
 
     def participants(self, experiment_name, variant):
         """
