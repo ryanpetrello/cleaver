@@ -13,7 +13,7 @@ from cleaver.backend.db import SQLAlchemyBackend, model
 class TestSQLAlchemy(TestCase):
 
     def setUp(self):
-        self.b = SQLAlchemyBackend(engine_options={'echo': True})
+        self.b = SQLAlchemyBackend()
 
     def tearDown(self):
         engine = self.b.Session.bind.connect()
