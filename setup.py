@@ -11,14 +11,14 @@ from cleaver import __version__
 setup(
     name='cleaver',
     version=__version__,
-    description="""
-    """,
-    long_description=None,
+    description="""Bloody simple A/B testing for Python WSGI applications""",
+    long_description="",
     classifiers=[
-        'Development Status :: 1 - Planning',
+        'Development Status :: 4 - Beta',
+        'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'Intended Audience :: Information Technology',
-        'License :: OSI Approved :: BSD License',
+        'License :: OSI Approved :: MIT License',
         'Operating System :: MacOS :: MacOS X',
         'Operating System :: Microsoft :: Windows',
         'Operating System :: POSIX',
@@ -28,10 +28,12 @@ setup(
         'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.2'
+        'Programming Language :: Python :: 3.2',
+        'Topic :: Internet :: WWW/HTTP :: WSGI',
+        'Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware'
     ],
-    keywords='',
-    url='',
+    keywords='ab a/b split testing wsgi multivariate conversion',
+    url='http://github.com/ryanpetrello/cleaver',
     author='Ryan Petrello',
     author_email='ryan (at) ryanpetrello.com',
     license='MIT',
