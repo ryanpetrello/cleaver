@@ -167,7 +167,10 @@ class SplitMiddleware(object):
         except ValueError:
             length = 0
 
-        fileobj = tempfile.SpooledTemporaryFile(1024*1024)
+        try:
+            fileobj = tempfile.SpooledTemporaryFile(1024*1024)
+        except AttributeError:  # pragma: nocover
+            fileobj = tempfile.TemporaryFile()  # py25 fallback
         if length:
             remaining = length
             while remaining > 0:
