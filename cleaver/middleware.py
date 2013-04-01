@@ -182,10 +182,6 @@ class SplitMiddleware(object):
                     )
                 fileobj.write(data)
                 remaining -= len(data)
-        else:
-            body = environ['wsgi.input'].read()
-            length = len(body)
-            fileobj.write(body)
 
         fileobj.seek(0)
         environ['wsgi.input'] = fileobj
