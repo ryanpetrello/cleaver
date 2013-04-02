@@ -18,7 +18,7 @@ class Experiment(ModelBase):
     __tablename__ = 'cleaver_experiment'
 
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
-    name = sa.Column(sa.Unicode(255), index=True)
+    name = sa.Column(sa.Unicode(255), unique=True)
     started_on = sa.Column(sa.DateTime, index=True)
 
     variants = relationship(
@@ -40,7 +40,7 @@ class Variant(ModelBase):
     __tablename__ = 'cleaver_variant'
 
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
-    name = sa.Column(sa.Unicode(255), index=True)
+    name = sa.Column(sa.Unicode(255), unique=True)
     order = sa.Column(sa.Integer)
     experiment_id = sa.Column(
         sa.Integer,
