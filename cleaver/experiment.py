@@ -145,7 +145,7 @@ class VariantStat(object):
         c = control.participant_count
         a = alternative.participant_count
 
-        if conv_c == 0:
+        if conv_c == 0 or conv_a == 0:
             return 0
 
         z = conv_a - conv_c
