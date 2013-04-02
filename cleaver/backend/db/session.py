@@ -20,6 +20,7 @@ def session_for(dburi, **kwargs):
     engine = get_engine(dburi, **kwargs)
     if dburi not in _SESSIONS:
         _SESSIONS[dburi] = scoped_session(sessionmaker(bind=engine))
+        ModelBase.query = _SESSIONS[dburi].query_property()
 
         # When a entity is instantiated, automatically add it to the Session
         @event.listens_for(mapper, 'init')

@@ -34,18 +34,18 @@ class TestSQLAlchemy(TestCase):
         b = self.b
         b.save_experiment('text_size', ('small', 'medium', 'large'))
 
-        assert self.b.Session.query(model.Experiment).count() == 1
-        experiment = self.b.Session.query(model.Experiment).first()
+        assert model.Experiment.query.count() == 1
+        experiment = model.Experiment.query.first()
         assert experiment.name == 'text_size'
         assert experiment.started_on.date() == datetime.utcnow().date()
 
         assert len(experiment.variants) == 3
         assert experiment.variants[0].name == 'small'
-        assert experiment.variants[0].experiment_name == 'text_size'
+        assert experiment.variants[0].experiment.name == 'text_size'
         assert experiment.variants[1].name == 'medium'
-        assert experiment.variants[1].experiment_name == 'text_size'
+        assert experiment.variants[1].experiment.name == 'text_size'
         assert experiment.variants[2].name == 'large'
-        assert experiment.variants[2].experiment_name == 'text_size'
+        assert experiment.variants[2].experiment.name == 'text_size'
 
     def test_get_experiment_no_match(self):
         b = self.b
@@ -94,12 +94,12 @@ class TestSQLAlchemy(TestCase):
         b = self.b
 
         b.mark_human('ryan')
-        query = b.Session.query(model.VerifiedHuman).filter_by(identity='ryan')
+        query = model.VerifiedHuman.query.filter_by(identity='ryan')
         assert query.count() == 1
         assert query.first() is not None
 
         b.mark_human('ryan')
-        query = b.Session.query(model.VerifiedHuman).filter_by(identity='ryan')
+        query = model.VerifiedHuman.query.filter_by(identity='ryan')
         assert query.count() == 1
         assert query.first() is not None
 
@@ -108,14 +108,14 @@ class TestSQLAlchemy(TestCase):
         b.save_experiment('text_size', ('small', 'medium', 'large'))
         b.participate('ryan', 'text_size', 'medium')
 
-        people = b.Session.query(model.Participant).all()
+        people = model.Participant.query.all()
         assert len(people) == 1
 
         assert people[0].identity == 'ryan'
-        assert people[0].experiment_name == 'text_size'
-        assert people[0].variant == 'medium'
+        assert people[0].experiment.name == 'text_size'
+        assert people[0].variant.name == 'medium'
 
-        assert b.Session.query(model.TrackedEvent).filter_by(
+        assert model.TrackedEvent.query.filter_by(
             type='PARTICIPANT'
         ).count() == 0
 
@@ -129,20 +129,20 @@ class TestSQLAlchemy(TestCase):
         b.save_experiment('text_size', ('small', 'medium', 'large'))
         b.participate('ryan', 'text_size', 'medium')
 
-        people = b.Session.query(model.Participant).all()
+        people = model.Participant.query.all()
         assert len(people) == 1
 
         assert people[0].identity == 'ryan'
-        assert people[0].experiment_name == 'text_size'
-        assert people[0].variant == 'medium'
+        assert people[0].experiment.name == 'text_size'
+        assert people[0].variant.name == 'medium'
 
-        participations = b.Session.query(model.TrackedEvent).filter_by(
+        participations = model.TrackedEvent.query.filter_by(
             type='PARTICIPANT'
         ).all()
         assert len(participations) == 1
 
-        assert participations[0].experiment_name == 'text_size'
-        assert participations[0].variant_name == 'medium'
+        assert participations[0].experiment.name == 'text_size'
+        assert participations[0].variant.name == 'medium'
         assert participations[0].total == 1
 
     def test_unverified_participate_multiple(self):
@@ -152,14 +152,14 @@ class TestSQLAlchemy(TestCase):
         b.participate('ryan', 'text_size', 'medium')
         b.participate('ryan', 'text_size', 'medium')
 
-        people = b.Session.query(model.Participant).all()
+        people = model.Participant.query.all()
         assert len(people) == 1
 
         assert people[0].identity == 'ryan'
-        assert people[0].experiment_name == 'text_size'
-        assert people[0].variant == 'medium'
+        assert people[0].experiment.name == 'text_size'
+        assert people[0].variant.name == 'medium'
 
-        assert b.Session.query(model.TrackedEvent).filter_by(
+        assert model.TrackedEvent.query.filter_by(
             type='PARTICIPANT'
         ).count() == 0
 
@@ -175,20 +175,20 @@ class TestSQLAlchemy(TestCase):
         b.participate('ryan', 'text_size', 'medium')
         b.participate('ryan', 'text_size', 'medium')
 
-        people = b.Session.query(model.Participant).all()
+        people = model.Participant.query.all()
         assert len(people) == 1
 
         assert people[0].identity == 'ryan'
-        assert people[0].experiment_name == 'text_size'
-        assert people[0].variant == 'medium'
+        assert people[0].experiment.name == 'text_size'
+        assert people[0].variant.name == 'medium'
 
-        participations = b.Session.query(model.TrackedEvent).filter_by(
+        participations = model.TrackedEvent.query.filter_by(
             type='PARTICIPANT'
         ).all()
         assert len(participations) == 1
 
-        assert participations[0].experiment_name == 'text_size'
-        assert participations[0].variant_name == 'medium'
+        assert participations[0].experiment.name == 'text_size'
+        assert participations[0].variant.name == 'medium'
         assert participations[0].total == 3
 
     def test_get_variant(self):
@@ -201,36 +201,38 @@ class TestSQLAlchemy(TestCase):
 
     def test_score(self):
         b = self.b
+        b.save_experiment('text_size', ('small', 'medium', 'large'))
         b.mark_conversion('text_size', 'medium')
 
-        conversions = b.Session.query(model.TrackedEvent).filter_by(
+        conversions = model.TrackedEvent.query.filter_by(
             type='CONVERSION'
         ).all()
         assert len(conversions) == 1
 
-        assert conversions[0].experiment_name == 'text_size'
-        assert conversions[0].variant_name == 'medium'
+        assert conversions[0].experiment.name == 'text_size'
+        assert conversions[0].variant.name == 'medium'
         assert conversions[0].total == 1
 
     def test_score_multiple(self):
         b = self.b
+        b.save_experiment('text_size', ('small', 'medium', 'large'))
         b.mark_conversion('text_size', 'medium')
         b.mark_conversion('text_size', 'large')
         b.mark_conversion('text_size', 'medium')
 
-        conversions = b.Session.query(model.TrackedEvent).filter_by(
+        conversions = model.TrackedEvent.query.filter_by(
             type='CONVERSION'
         ).all()
         assert len(conversions) == 2
 
         for c in conversions:
             assert ((
-                c.experiment_name == 'text_size' and
-                c.variant_name == 'medium' and
+                c.experiment.name == 'text_size' and
+                c.variant.name == 'medium' and
                 c.total == 2
             ) or (
-                c.experiment_name == 'text_size' and
-                c.variant_name == 'large' and
+                c.experiment.name == 'text_size' and
+                c.variant.name == 'large' and
                 c.total == 1
             ))
 
@@ -254,26 +256,30 @@ class TestSQLAlchemy(TestCase):
     )
     def test_verified_participants(self):
         b = self.b
-        b.participate('ryan', 'text_color', 'small')
-        b.participate('joe', 'text_color', 'medium')
+        b.save_experiment('text_size', ('small', 'medium', 'large'))
+        b.save_experiment('show_promo', ('True', 'False'))
+        b.participate('ryan', 'text_size', 'small')
+        b.participate('joe', 'text_size', 'medium')
         b.participate('joe', 'show_promo', 'True')
 
-        assert b.participants('text_color', 'small') == 1
-        assert b.participants('text_color', 'medium') == 1
-        assert b.participants('text_color', 'large') == 0
+        assert b.participants('text_size', 'small') == 1
+        assert b.participants('text_size', 'medium') == 1
+        assert b.participants('text_size', 'large') == 0
 
         assert b.participants('show_promo', 'True') == 1
         assert b.participants('show_promo', 'False') == 0
 
     def test_conversions(self):
         b = self.b
-        b.mark_conversion('text_color', 'small')
-        b.mark_conversion('text_color', 'medium')
+        b.save_experiment('text_size', ('small', 'medium', 'large'))
+        b.save_experiment('show_promo', ('True', 'False'))
+        b.mark_conversion('text_size', 'small')
+        b.mark_conversion('text_size', 'medium')
         b.mark_conversion('show_promo', 'True')
 
-        assert b.conversions('text_color', 'small') == 1
-        assert b.conversions('text_color', 'medium') == 1
-        assert b.conversions('text_color', 'large') == 0
+        assert b.conversions('text_size', 'small') == 1
+        assert b.conversions('text_size', 'medium') == 1
+        assert b.conversions('text_size', 'large') == 0
 
         assert b.conversions('show_promo', 'True') == 1
         assert b.conversions('show_promo', 'False') == 0

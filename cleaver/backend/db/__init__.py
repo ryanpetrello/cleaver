@@ -54,7 +54,7 @@ class SQLAlchemyBackend(CleaverBackend):
         try:
             return [
                 self.experiment_factory(e)
-                for e in self.Session.query(model.Experiment).all()
+                for e in model.Experiment.query.all()
             ]
         finally:
             self.Session.close()
@@ -69,9 +69,7 @@ class SQLAlchemyBackend(CleaverBackend):
         Returns a ``cleaver.experiment.Experiment`` or ``None``
         """
         try:
-            return self.experiment_factory(
-                self.Session.query(model.Experiment).get(name)
-            )
+            return self.experiment_factory(model.Experiment.get_by(name=name))
         finally:
             self.Session.close()
 
@@ -97,17 +95,13 @@ class SQLAlchemyBackend(CleaverBackend):
 
     def is_verified_human(self, identity):
         try:
-            return self.Session.query(
-                model.VerifiedHuman
-            ).filter_by(identity=identity).first() is not None
+            return model.VerifiedHuman.get_by(identity=identity) is not None
         finally:
             self.Session.close()
 
     def mark_human(self, identity):
         try:
-            if self.Session.query(model.VerifiedHuman).filter_by(
-                identity=identity
-            ).count() == 0:
+            if model.VerifiedHuman.get_by(identity=identity) is None:
                 model.VerifiedHuman(identity=identity)
                 self.Session.commit()
         finally:
@@ -123,68 +117,77 @@ class SQLAlchemyBackend(CleaverBackend):
         Returns a ``String`` or `None`
         """
         try:
-            match = self.Session.query(model.Participant).filter(and_(
+            match = model.Participant.query.join(
+                model.Experiment
+            ).filter(and_(
                 model.Participant.identity == identity,
-                model.Participant.experiment_name == experiment_name
+                model.Experiment.name == experiment_name
             )).first()
-            return match.variant if match else None
+            return match.variant.name if match else None
         finally:
             self.Session.close()
 
-    def set_variant(self, identity, experiment_name, variant):
+    def set_variant(self, identity, experiment_name, variant_name):
         """
         Set the variant for a specific user.
 
         :param identity a unique user identifier
         :param experiment_name the string name of the experiment
-        :param variant the string name of the variant
+        :param variant_name the string name of the variant
         """
         try:
-            if self.Session.query(model.Participant).filter(and_(
+            experiment = model.Experiment.get_by(name=experiment_name)
+            variant = model.Variant.get_by(name=variant_name)
+            if experiment and variant and model.Participant.query.filter(and_(
                 model.Participant.identity == identity,
-                model.Participant.experiment_name == experiment_name,
-                model.Participant.variant == variant
+                model.Participant.experiment_id == experiment.id,
+                model.Participant.variant_id == variant.id
             )).count() == 0:
                 model.Participant(
                     identity=identity,
-                    experiment_name=experiment_name,
+                    experiment=experiment,
                     variant=variant
                 )
                 self.Session.commit()
         finally:
             self.Session.close()
 
-    def _mark_event(self, type, experiment_name, variant):
+    def _mark_event(self, type, experiment_name, variant_name):
         try:
-            if self.Session.query(model.TrackedEvent).filter(and_(
+            experiment = model.Experiment.get_by(name=experiment_name)
+            variant = model.Variant.get_by(name=variant_name)
+            if experiment and variant and model.TrackedEvent.query.filter(and_(
                 model.TrackedEvent.type == type,
-                model.TrackedEvent.experiment_name == experiment_name,
-                model.TrackedEvent.variant_name == variant
+                model.TrackedEvent.experiment_id == experiment.id,
+                model.TrackedEvent.variant_id == variant.id
             )).first() is None:
                 model.TrackedEvent(
                     type=type,
-                    experiment_name=experiment_name,
-                    variant_name=variant
+                    experiment=experiment,
+                    variant=variant
                 )
                 self.Session.commit()
         finally:
             self.Session.close()
 
         try:
-            self.Session.execute(
-                'UPDATE %s SET total = total + 1 '
-                'WHERE experiment_name = :experiment_name '
-                'AND variant_name = :variant_name '
-                'AND `type` = :type' % (
-                    model.TrackedEvent.__tablename__
-                ),
-                {
-                    'experiment_name': experiment_name,
-                    'variant_name': variant,
-                    'type': type
-                }
-            )
-            self.Session.commit()
+            experiment = model.Experiment.get_by(name=experiment_name)
+            variant = model.Variant.get_by(name=variant_name)
+            if experiment and variant:
+                self.Session.execute(
+                    'UPDATE %s SET total = total + 1 '
+                    'WHERE experiment_id = :experiment_id '
+                    'AND variant_id = :variant_id '
+                    'AND `type` = :type' % (
+                        model.TrackedEvent.__tablename__
+                    ),
+                    {
+                        'experiment_id': experiment.id,
+                        'variant_id': variant.id,
+                        'type': type
+                    }
+                )
+                self.Session.commit()
         finally:
             self.Session.close()
 
@@ -208,10 +211,16 @@ class SQLAlchemyBackend(CleaverBackend):
 
     def _total_events(self, type, experiment_name, variant):
         try:
-            row = self.Session.query(model.TrackedEvent).filter(and_(
+            row = model.TrackedEvent.query.join(
+                model.Experiment
+            ).join(
+                model.Variant
+            ).filter(and_(
                 model.TrackedEvent.type == type,
-                model.TrackedEvent.experiment_name == experiment_name,
-                model.TrackedEvent.variant_name == variant
+                model.TrackedEvent.experiment_id == model.Experiment.id,
+                model.TrackedEvent.variant_id == model.Variant.id,
+                model.Experiment.name == experiment_name,
+                model.Variant.name == variant
             )).first()
             return row.total if row else 0
         finally:
