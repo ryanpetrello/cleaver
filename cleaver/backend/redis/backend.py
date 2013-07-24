@@ -121,6 +121,11 @@ class RedisBackend(CleaverBackend):
         # fetch variants for given experiment
         variants = self.redis.zrange(vkey, 0, MAX_VARIANTS)
         # create datetime from stored string
+        # XXX python25's strptime doesnt support `%f` directive
+        # the following will probably work across the board, but it seems silly
+        # to bring regular expressions into this just for python25 support
+        # datetime.strptime(re.sub('\..*', '', experiment_dict['started_on']),
+        # "%Y-%m-%d %H:%M:%S")
         started_on = datetime.strptime(experiment_dict['started_on'],
                                        '%Y-%m-%d %H:%M:%S.%f')
         experiment_dict.update({'variants': tuple(variants),
