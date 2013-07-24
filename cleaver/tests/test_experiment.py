@@ -99,12 +99,18 @@ class TestVariantStat(TestCase):
         # Variant A:       180	         45 	    1.33
         # Variant B:       189	         28 	    -1.13
         # Variant C:       188	         61 	    2.94
+        # Variant D:       188	        188 	    27.648
+        # Variant E:       188	        214 	    235.953
+        # Variant F:       188	        215 	    Invalid
         #
         map_ = {
             'x': (182, 35),
             'a': (180, 45),
             'b': (189, 28),
-            'c': (188, 61)
+            'c': (188, 61),
+            'd': (188, 188),
+            'e': (188, 214),
+            'f': (188, 215),
         }
         e = Mock()
         e.control = 'x'
@@ -123,6 +129,15 @@ class TestVariantStat(TestCase):
 
         v = VariantStat('c', e)
         assert round(v.z_score, 3) == 2.941
+
+        v = VariantStat('d', e)
+        assert round(v.z_score, 3) == 27.648
+
+        v = VariantStat('e', e)
+        assert round(v.z_score, 3) == 235.953
+
+        v = VariantStat('f', e)
+        assert v.z_score == "Invalid"
 
     @patch.object(VariantStat, 'z_score', 'N/A')
     def test_unknown_confidence(self):

@@ -142,15 +142,26 @@ class VariantStat(object):
         conv_c = control.conversion_rate
         conv_a = alternative.conversion_rate
 
-        c = control.participant_count
-        a = alternative.participant_count
+        num_c = control.participant_count
+        num_a = alternative.participant_count
 
         if conv_c == 0 or conv_a == 0:
             return 0
 
-        z = conv_a - conv_c
-        s = (conv_a * (1 - conv_a)) / a + (conv_c * (1 - conv_c)) / c
-        return z / math.sqrt(s)
+        numerator = conv_a - conv_c
+
+        frac_c = (conv_c * (1 - conv_c)) / float(num_c)
+        frac_a = (conv_a * (1 - conv_a)) / float(num_a)
+
+        if frac_c + frac_a == 0:
+            # square root of 0 is 0, so no need to calculate
+            return 0
+        elif frac_c + frac_a < 0:
+            # can't take a square root of a negative number,
+            # so return 'Invalid'
+            return 'Invalid'
+
+        return numerator / math.sqrt((frac_c + frac_a))
 
     @property
     def confidence_level(self):
