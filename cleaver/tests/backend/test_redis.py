@@ -158,7 +158,6 @@ class TestRedis(TestCase):
         assert b.redis.zrange(participations[0], 0, 100)[0] == 'medium'
         assert len(b.redis.zrange(participations[0], 0, 100)) == 1
 
-
     def test_unverified_participate_multiple(self):
         b = self.b
         b.save_experiment('text_size', ('small', 'medium', 'large'))
