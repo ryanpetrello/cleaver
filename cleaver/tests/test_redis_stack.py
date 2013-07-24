@@ -3,27 +3,26 @@ from itertools import cycle
 from datetime import datetime
 from wsgiref.util import setup_testing_defaults
 
-from sqlalchemy.engine.reflection import Inspector
-
 from cleaver import SplitMiddleware
-from cleaver.backend.db import SQLAlchemyBackend
+from cleaver.backend.redis import RedisBackend
 from cleaver.compat import next
+from cleaver.experiment import VariantStat
+
+import sys
+
+
+def debug(msg):
+    sys.stdout.write(' %s ' % str(msg))
+    sys.stdout.flush()
 
 
 class TestFullStack(TestCase):
 
     def setUp(self):
-        self.b = SQLAlchemyBackend('sqlite://')
+        self.b = RedisBackend(prefix="testcleaver")
 
     def tearDown(self):
-        engine = self.b.Session.bind.connect()
-        for table_name in Inspector.from_engine(engine).get_table_names():
-            trans = engine.begin()
-
-            # Attempt to truncate all data in the table and commit
-            engine.execute('DELETE FROM %s' % table_name)
-            trans.commit()
-        engine.close()
+        map(self.b.redis.delete, self.b.redis.keys("testcleaver:*"))
 
     def test_full_conversion(self):
 
@@ -81,9 +80,12 @@ class TestFullStack(TestCase):
 
         # The third request marks a conversion
         assert app(environ, lambda *args: None) == []
-
+        assert experiment.participants == 1
         assert experiment.conversions == 1
         assert self.b.conversions('Coin', variant) == 1
+
+        assert VariantStat('Heads', experiment).z_score == 'N/A'
+        assert VariantStat('Tails', experiment).z_score == 0
 
     def test_human_verification_required(self):
 
