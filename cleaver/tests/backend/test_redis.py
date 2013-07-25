@@ -8,13 +8,6 @@ from cleaver.experiment import Experiment
 from cleaver.tests import FakeIdentityProvider
 from cleaver.backend.redis import RedisBackend
 
-import sys
-
-
-def debug(msg):
-    sys.stdout.write(' %s ' % str(msg))
-    sys.stdout.flush()
-
 
 class TestRedis(TestCase):
 

@@ -8,13 +8,6 @@ from cleaver.backend.redis import RedisBackend
 from cleaver.compat import next
 from cleaver.experiment import VariantStat
 
-import sys
-
-
-def debug(msg):
-    sys.stdout.write(' %s ' % str(msg))
-    sys.stdout.flush()
-
 
 class TestFullStack(TestCase):
 
