@@ -6,6 +6,8 @@ python:
   - "3.2"
 env:
   - PYTHONPATH='.'
+services:
+  - redis-server
 branches:
   only:
     - master
