@@ -56,6 +56,16 @@ class RedisBackend(CleaverBackend):
                  port=6379, db=5, redis_kwargs=None):
         if redis_kwargs is None:
             redis_kwargs = {}
+
+        if 'decode_responses' not in redis_kwargs:
+            # XXX in python3.x, redis-py returns bytestrings,
+            # so we need to instruct the lib to decode to the
+            # charset this backend expects
+            # TODO if caller explicitly sets `decode_responses`
+            # to False AND is running python3.x, we do we need
+            # to raise an exception?
+            redis_kwargs.update({'decode_responses': True})
+
         # prefix used for all redis keys. this allows multiple cleavers
         # to use the same redis db if desired. also allows easy deletion
         # of cleaver keys without deleting other keys in the db.

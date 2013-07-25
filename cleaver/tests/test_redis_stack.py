@@ -15,7 +15,8 @@ class TestFullStack(TestCase):
         self.b = RedisBackend(prefix="testcleaver")
 
     def tearDown(self):
-        map(self.b.redis.delete, self.b.redis.keys("testcleaver:*"))
+        for key in self.b.redis.keys("testcleaver:*"):
+            self.b.redis.delete(key)
 
     def test_full_conversion(self):
 

@@ -15,7 +15,8 @@ class TestRedis(TestCase):
         self.b = RedisBackend(prefix="testcleaver")
 
     def tearDown(self):
-        map(self.b.redis.delete, self.b.redis.keys("testcleaver:*"))
+        for key in self.b.redis.keys("testcleaver:*"):
+            self.b.redis.delete(key)
 
     def test_valid_configuration(self):
         cleaver = Cleaver({}, FakeIdentityProvider(), RedisBackend())
@@ -110,8 +111,8 @@ class TestRedis(TestCase):
         ryan = b.redis.hgetall(people[0])
 
         assert people[0].split(':')[-1] == 'ryan'
-        assert ryan.keys()[0] == 'text_size'
-        assert ryan[ryan.keys()[0]] == 'medium'
+        assert list(ryan.keys())[0] == 'text_size'
+        assert ryan[list(ryan.keys())[0]] == 'medium'
 
         assert len(b.redis.keys("testcleaver:total_participations:*")) == 0
 
@@ -130,8 +131,8 @@ class TestRedis(TestCase):
         ryan = b.redis.hgetall(people[0])
 
         assert people[0].split(':')[-1] == 'ryan'
-        assert ryan.keys()[0] == 'text_size'
-        assert ryan[ryan.keys()[0]] == 'medium'
+        assert list(ryan.keys())[0] == 'text_size'
+        assert ryan[list(ryan.keys())[0]] == 'medium'
 
         participations = b.redis.keys("testcleaver:total_participations:*")
         assert len(participations) == 1
@@ -153,8 +154,8 @@ class TestRedis(TestCase):
         ryan = b.redis.hgetall(people[0])
 
         assert people[0].split(':')[-1] == 'ryan'
-        assert ryan.keys()[0] == 'text_size'
-        assert ryan[ryan.keys()[0]] == 'medium'
+        assert list(ryan.keys())[0] == 'text_size'
+        assert ryan[list(ryan.keys())[0]] == 'medium'
 
         assert len(b.redis.keys("testcleaver:total_participations:*")) == 0
 
@@ -175,8 +176,8 @@ class TestRedis(TestCase):
         ryan = b.redis.hgetall(people[0])
 
         assert people[0].split(':')[-1] == 'ryan'
-        assert ryan.keys()[0] == 'text_size'
-        assert ryan[ryan.keys()[0]] == 'medium'
+        assert list(ryan.keys())[0] == 'text_size'
+        assert ryan[list(ryan.keys())[0]] == 'medium'
 
         participations = b.redis.keys("testcleaver:total_participations:*")
         assert len(participations) == 1

@@ -98,7 +98,8 @@ wsgi_app = SplitMiddleware(
 recognizing returning visitors and storing statistical data).  Luckily, Cleaver
 comes with a few out of the box, such as support for [Beaker
 sessions](http://beaker.groovie.org/), and storage via
-[SQLAlchemy](http://www.sqlalchemy.org/).  Implementing your own is easy too;
+[SQLAlchemy](http://www.sqlalchemy.org/) or [Redis](http://redis.io/).
+Implementing your own is easy too;
 just have a look at the full documentation <link>.
 
 ### Overriding Variants
