@@ -121,7 +121,6 @@ class TestRedis(TestCase):
         assert ryan[ryan.keys()[0]] == 'medium'
 
         assert len(b.redis.keys("testcleaver:total_participations:*")) == 0
-        assert len(b.redis.keys("testcleaver:total_participants:*")) == 0
 
     @patch.object(
         RedisBackend,
@@ -163,7 +162,6 @@ class TestRedis(TestCase):
         assert people[0].split(':')[-1] == 'ryan'
         assert ryan.keys()[0] == 'text_size'
         assert ryan[ryan.keys()[0]] == 'medium'
-        assert len(b.redis.keys("testcleaver:total_participants:*")) == 0
 
         assert len(b.redis.keys("testcleaver:total_participations:*")) == 0
 
