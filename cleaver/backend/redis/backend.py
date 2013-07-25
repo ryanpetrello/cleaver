@@ -51,9 +51,12 @@ class RedisBackend(CleaverBackend):
     to a redis database.
     """
 
-    def __init__(self, prefix='cleaver', host='localhost', port=6379, db=5):
+    def __init__(self, prefix='cleaver', host='localhost',
+                 port=6379, db=5, redis_kwargs=None):
+        if redis_kwargs is None:
+            redis_kwargs = {}
         self.prefix = prefix
-        self.redis = redis.Redis(host=host, port=port, db=db)
+        self.redis = redis.Redis(host=host, port=port, db=db, **redis_kwargs)
 
     def _key(self, template, value=None, variant=None):
         """ convenience method for formatting REDIS_KEY_TEMPLATES """
