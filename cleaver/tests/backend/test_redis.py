@@ -141,15 +141,6 @@ class TestRedis(TestCase):
         assert ryan.keys()[0] == 'text_size'
         assert ryan[ryan.keys()[0]] == 'medium'
 
-        """
-        participants = b.redis.keys("testcleaver:total_participants:*")
-        assert len(participants) == 1
-
-        assert participants[0].split(':')[-1] == 'text_size'
-        assert b.redis.zrange(participants[0], 0, 100)[0] == 'medium'
-        assert len(b.redis.zrange(participants[0], 0, 100)) == 1
-        """
-
         participations = b.redis.keys("testcleaver:total_participations:*")
         assert len(participations) == 1
         assert len(b.redis.zrange(participations[0], 0, 100)) == 1
