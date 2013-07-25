@@ -10,7 +10,8 @@ __all__ = ['RedisBackend']
 # hopefully 1000 is a resonable upper limit for number of experiment variants
 MAX_VARIANTS = 1000
 
-# templates for redis keys to avoid misspellings and ease future changes
+# templates for redis keys to avoid misspellings and ease future changes.
+# there are no provisions for template versioning or migration at this point.
 REDIS_KEY_TEMPLATES = {
 
     # experiments are redis hashes of experiment metadata:
@@ -33,13 +34,13 @@ REDIS_KEY_TEMPLATES = {
     "participant": "%(prefix)s:participant:%(identity)s",
 
     # total_participations are redis sorted sets of variant_name scored by
-    # number of participants
+    # number of participations (one identity may be counted several times)
     #    key: ((variant2, 23.0), (variant1, 48.0), (variant0, 6.0), ...)
     "total_participations":
     "%(prefix)s:total_participations:%(experiment_name)s",
 
     # total_conversions are redis sorted sets of variant_name
-    # scored by conversions
+    # scored by conversions (one identity may be counted several times)
     #    key: ((variant1, 30.0), (variant2, 23.0), (variant0, 9.0), ...)
     "total_conversions": "%(prefix)s:total_conversions:%(experiment_name)s"
 }
@@ -55,6 +56,11 @@ class RedisBackend(CleaverBackend):
                  port=6379, db=5, redis_kwargs=None):
         if redis_kwargs is None:
             redis_kwargs = {}
+        # prefix used for all redis keys. this allows multiple cleavers
+        # to use the same redis db if desired. also allows easy deletion
+        # of cleaver keys without deleting other keys in the db.
+        # tests use `testcleaver` so setup and teardown will not affect
+        # production data
         self.prefix = prefix
         self.redis = redis.Redis(host=host, port=port, db=db, **redis_kwargs)
 
@@ -69,8 +75,10 @@ class RedisBackend(CleaverBackend):
         if template == "participant":
             return REDIS_KEY_TEMPLATES[template] % {'prefix': self.prefix,
                                                     'identity': value}
+
         elif template in ["all_experiments", "verifiedhuman"]:
             return REDIS_KEY_TEMPLATES[template] % {'prefix': self.prefix}
+
         elif template in ["participations", "conversions"]:
             assert variant is not None
             return REDIS_KEY_TEMPLATES[template] % {'prefix': self.prefix,
@@ -122,15 +130,15 @@ class RedisBackend(CleaverBackend):
         """
         vkey = self._key("variants", experiment_dict['name'])
         # fetch variants for given experiment
+        # zrange sorts by index. since index == score for the variant
+        # sorted sets (variant order), this will return variants
+        # in the correct order
         variants = self.redis.zrange(vkey, 0, MAX_VARIANTS)
+
         # create datetime from stored string
-        # XXX python25's strptime doesnt support `%f` directive
-        # the following will probably work across the board, but it seems silly
-        # to bring regular expressions into this just for python25 support
-        # datetime.strptime(re.sub('\..*', '', experiment_dict['started_on']),
-        # "%Y-%m-%d %H:%M:%S")
         started_on = datetime.strptime(experiment_dict['started_on'],
-                                       '%Y-%m-%d %H:%M:%S.%f')
+                                       '%Y-%m-%dT%H:%M:%S')
+
         experiment_dict.update({'variants': tuple(variants),
                                 'started_on': started_on})
         return experiment_dict
@@ -159,15 +167,23 @@ class RedisBackend(CleaverBackend):
         :param variants a list of strings, each with a unique variant name
         """
         key = self._key("experiment", name)
-        self.redis.hmset(key, {'started_on': datetime.utcnow(),
-                               'name': name})
+        # python25's strptime doesnt support the `%f` directive
+        # for dealing with microseconds, so we just drop microseconds.
+        # instead of '2013-07-25T14:43:16.968191' the string will be
+        # '2013-07-25T14:43:16'
+        now = datetime.utcnow().replace(microsecond=0).isoformat()
+        self.redis.hmset(key, {'started_on': now, 'name': name})
+
         status = []
         if (len(variants) > MAX_VARIANTS):
             raise RuntimeError('Experiments must have '
-                               'fewer than 1000 variants')
+                               'fewer than %d variants' % MAX_VARIANTS)
         for i, v in enumerate(variants):
             vkey = self._key("variants", name)
             status.append(self.redis.zadd(vkey, v, float(i)))
+        # TODO this isn't really necessary, because the caller doesn't care
+        # about the return value. in the future we might want to know
+        # if an experiment failed to save, so this is a little reminder
         return all(status)
 
     def is_verified_human(self, identity):

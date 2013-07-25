@@ -40,7 +40,7 @@ class TestRedis(TestCase):
 
         assert experiment_key.split(':')[-1] == 'text_size'
         started_on = datetime.strptime(experiment['started_on'],
-                                       '%Y-%m-%d %H:%M:%S.%f')
+                                       '%Y-%m-%dT%H:%M:%S')
         assert started_on.date() == datetime.utcnow().date()
         vkey = "testcleaver:variants:%s" % experiment_key.split(':')[-1]
         variants = tuple(b.redis.zrange(vkey, 0, 1000))
