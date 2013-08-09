@@ -37,7 +37,7 @@ setup(
     author='Ryan Petrello',
     author_email='ryan (at) ryanpetrello.com',
     license='MIT',
-    tests_require=['mock', 'sqlalchemy'],
+    tests_require=['mock', 'sqlalchemy', 'redis'],
     test_suite='cleaver.tests',
     zip_safe=False,
     packages=find_packages(exclude=['ez_setup'])
