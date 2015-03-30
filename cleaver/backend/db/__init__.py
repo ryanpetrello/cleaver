@@ -1,5 +1,11 @@
 from datetime import datetime
 
+from . import model
+from .session import session_for
+
+from cleaver.experiment import Experiment as CleaverExperiment
+from cleaver.backend import CleaverBackend
+
 
 def _sqlalchemy_installed():
     try:
@@ -12,13 +18,7 @@ def _sqlalchemy_installed():
     return sqlalchemy
 _sqlalchemy_installed()
 
-from sqlalchemy import and_
-
-from . import model
-from .session import session_for
-
-from cleaver.experiment import Experiment as CleaverExperiment
-from cleaver.backend import CleaverBackend
+from sqlalchemy import and_  # noqa
 
 
 class SQLAlchemyBackend(CleaverBackend):

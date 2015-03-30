@@ -4,11 +4,12 @@ from .bottle import Bottle, view, request
 from cleaver .backend import CleaverBackend
 
 app = Bottle()
-__t = lambda p: path.join(
-    path.dirname(path.abspath(__file__)),
-    'views',
-    p
-)
+def __t(p):
+    return path.join(
+        path.dirname(path.abspath(__file__)),
+        'views',
+        p
+    )
 
 
 def format_percentage(f):
