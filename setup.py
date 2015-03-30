@@ -40,5 +40,6 @@ setup(
     tests_require=['mock', 'sqlalchemy'],
     test_suite='cleaver.tests',
     zip_safe=False,
-    packages=find_packages(exclude=['ez_setup'])
+    packages=find_packages(exclude=['ez_setup']),
+    include_package_data=True
 )
